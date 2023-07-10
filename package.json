@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@vernier/godirect": "1.5.0",
+    "sidekick-json": "git+https://github.com/Menersar/sidekick-json.git",
     "arraybuffer-loader": "^1.0.6",
     "atob": "2.1.2",
     "btoa": "1.2.1",
@@ -54,7 +55,7 @@
     "immutable": "3.8.1",
     "jszip": "^3.1.5",
     "minilog": "3.1.0",
-    "scratch-parser": "5.1.1",
+    "scratch-parser": "git+https://github.com/Menersar/scratch-parser.git#sidekick",
     "scratch-sb1-converter": "0.2.7",
     "scratch-translate-extension-languages": "0.0.20191118205314",
     "text-encoding": "0.7.0",
