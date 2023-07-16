@@ -21,7 +21,7 @@
     "i18n:push": "tx-push-src scratch-editor extensions translations/core/en.json",
     "lint": "eslint . && format-message lint src/**/*.js",
     "prepare": "husky install",
-    "prepublish": "in-publish && npm run build || not-in-publish",
+    "prepublishOnly": "in-publish && npm run build || not-in-publish",
     "start": "webpack-dev-server",
     "tap": "tap ./test/{unit,integration}/*.js",
     "tap:unit": "tap ./test/unit/*.js",
