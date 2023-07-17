@@ -1,6 +1,3 @@
 module.exports = {
-    extends: ["scratch", "scratch/node", "scratch/es6"],
-    rules: {
-        indent: off,
-    },
+    extends: ['scratch', 'scratch/node', 'scratch/es6']
 };
