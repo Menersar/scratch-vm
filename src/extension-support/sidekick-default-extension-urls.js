@@ -10,8 +10,15 @@ const defaults = new Map();
 
 // ??? !!!
 // Scratch Lab Animated Text - https://lab.scratch.mit.edu/text/
-// !!! CHANGE !!!
+// !!! s CHANGE !!!
+// defaults.set('text', 'https://extensions.turbowarp.org/lab/text.js');
 // defaults.set('text', 'https://mixality.github.io/Sidekick/extensions/lab/text.js');
 defaults.set('text', 'https://menersar.github.io/Sidekick/extensions/lab/text.js');
+
+// !!! t CHANGE !!!
+// !!!!
+// !!! 'Turboloader's AudioStream' ???
+// Turboloader's AudioStream
+defaults.set('audiostr', 'https://extensions.turbowarp.org/turboloader/audiostream.js');
 
 module.exports = defaults;
