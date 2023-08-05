@@ -27,8 +27,10 @@ const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYA
 // const serverURL = 'https://translate-service.scratch.mit.edu/';
 // !!! t CHANGE !!!
 // const serverURL = 'https://trampoline.turbowarp.org/translate/';
+// const serverURL = 'https://translate-service.scratch.mit.edu/translate?language=${language}&text=${encodeURIComponent(text)}'
+const serverURL = 'https://translate-service.scratch.mit.edu/';
 // const serverURL = 'https://mixality.github.io/Sidekick/translate/';
-const serverURL = 'https://menersar.github.io/Sidekick/trampoline/translate/';
+// const serverURL = 'https://menersar.github.io/Sidekick/trampoline/translate/';
 
 /**
  * How long to wait in ms before timing out requests to translate server.
