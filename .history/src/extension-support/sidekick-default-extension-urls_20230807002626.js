@@ -19,7 +19,7 @@ defaults.set('text', 'https://menersar.github.io/Sidekick/extensions/lab/text.js
 // !!!!
 // !!! 'Turboloader's AudioStream' ???
 // Turboloader's AudioStream
-// defaults.set('audiostr', 'https://extensions.turbowarp.org/turboloader/audiostream.js');
+defaults.set('audiostr', 'https://extensions.turbowarp.org/turboloader/audiostream.js');
 defaults.set('text', 'https://menersar.github.io/Sidekick/turboloader/audiostream.js');
 
 module.exports = defaults;
