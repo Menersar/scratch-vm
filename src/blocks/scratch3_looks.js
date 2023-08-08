@@ -134,7 +134,7 @@ class Scratch3LooksBlocks {
             bubbleState.skinId = null;
             this.runtime.requestRedraw();
         }
-        target.removeListener(RenderedTarget.EVENT_TARGET_VISUAL_CHANGE, this._onTargetChanged);
+        // target.removeListener(RenderedTarget.EVENT_TARGET_VISUAL_CHANGE, this._onTargetChanged);
         target.onTargetVisualChange = null;
     }
 

@@ -184,7 +184,7 @@ class Scratch3PenBlocks {
             if (penState) {
                 newTarget.setCustomState(Scratch3PenBlocks.STATE_KEY, Clone.simple(penState));
                 if (penState.penDown) {
-                    newTarget.addListener(RenderedTarget.EVENT_TARGET_MOVED, this._onTargetMoved);
+                    // newTarget.addListener(RenderedTarget.EVENT_TARGET_MOVED, this._onTargetMoved);
                     newTarget.onTargetMoved = this._onTargetMoved;
                 }
             }
