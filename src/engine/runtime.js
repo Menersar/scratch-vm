@@ -2924,6 +2924,7 @@ class Runtime extends EventEmitter {
             runtimeOptions: this.runtimeOptions,
             interpolation: this.interpolationEnabled,
             turbo: this.turboMode,
+            // !!! '?' (exact functionality here with '? etc.' notation)? ???
             hq: this.renderer ? this.renderer.useHighQualityRender : false,
             width: this.stageWidth,
             height: this.stageHeight
