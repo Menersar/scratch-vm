@@ -1014,7 +1014,7 @@ test('Starting the VM emits an event', t => {
     });
     vm.start();
     t.equal(started, true);
-    vm.quit();
+    // vm.quit();
     t.end();
 });
 

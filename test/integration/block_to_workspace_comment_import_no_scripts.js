@@ -38,7 +38,7 @@ test('importing sb2 project where block comment is converted to workspace commen
         const targetBlocks = Object.values(target.blocks._blocks);
         t.equal(targetBlocks.length, 0);
 
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

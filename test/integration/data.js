@@ -14,7 +14,7 @@ test('data', t => {
     // Evaluate playground data and exit
     vm.on('playgroundData', () => {
         // @todo Additional tests
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

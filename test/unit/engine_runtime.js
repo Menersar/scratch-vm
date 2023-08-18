@@ -191,7 +191,7 @@ test('Starting the runtime emits an event', t => {
     });
     rt.start();
     t.equal(started, true);
-    rt.quit();
+    // rt.quit();
     t.end();
 });
 
@@ -208,7 +208,7 @@ test('Runtime cannot be started while already running', t => {
     // Starting again should not emit another event
     rt.start();
     t.equal(started, false);
-    rt.quit();
+    // rt.quit();
     t.end();
 });
 
@@ -224,7 +224,7 @@ test('setCompatibilityMode restarts if it was already running', t => {
 
     rt.setCompatibilityMode(true);
     t.equal(started, true);
-    rt.quit();
+    // rt.quit();
     t.end();
 });
 

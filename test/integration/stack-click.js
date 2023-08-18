@@ -22,7 +22,7 @@ test('stack click activates the stack', t => {
     vm.on('playgroundData', () => {
         // The sprite should have moved 100 to the right
         t.equal(vm.editingTarget.x, 100);
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

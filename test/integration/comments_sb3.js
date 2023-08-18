@@ -70,7 +70,7 @@ test('load an sb3 project with comments', t => {
         t.equal(stopAllBlock.comment, blockComments[4].id);
         t.equal(stopAllBlock.opcode, 'control_stop');
 
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

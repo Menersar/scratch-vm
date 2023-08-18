@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const {OrderedMap} = require('immutable');
-const ExtendedJSON = require('sidekick-json');
+const ExtendedJSON = require('@turbowarp/json');
 
 const ArgumentType = require('../extension-support/argument-type');
 const Blocks = require('./blocks');
@@ -43,15 +43,12 @@ const defaultBlockPackages = {
     scratch3_procedures: require('../blocks/scratch3_procedures')
 };
 
-const interpolate = require('./sidekick-interpolate');
-const FrameLoop = require('./sidekick-frame-loop');
+const interpolate = require('./tw-interpolate');
+const FrameLoop = require('./tw-frame-loop');
 
 const defaultExtensionColors = ['#0FBD8C', '#0DA57A', '#0B8E69'];
 
-// const ExtendedJSON = require('sidekick-json');
-// const interpolate = require('./sidekick-interpolate');
-// const FrameLoop = require('./sidekick-frame-loop');
-const COMMENT_CONFIG_MAGIC = ' // _sidekickconfig_';
+const COMMENT_CONFIG_MAGIC = ' // _twconfig_';
 
 /**
  * Information used for converting Scratch argument types into scratch-blocks data.
@@ -137,7 +134,8 @@ const ArgumentTypeMap = (() => {
  * removing an existing cloud variable.
  * @property {function} hasCloudVariables A function to call to check that
  * the runtime has any cloud variables.
- * @property {function} getNumberOfCloudVariables A function that returns the number of cloud variables in the project.
+ * @property {function} getNumberOfCloudVariables A function that returns the
+ * number of cloud variables in the project.
  */
 
 /**
@@ -148,17 +146,14 @@ const ArgumentTypeMap = (() => {
  * These are to be called whenever attempting to create or delete
  * a cloud variable.
  * @param {Object} cloudOptions
- * @param {number} cloudOptions.limit Maximum number of cloud variables.
+ * @param {number} cloudOptions.limit Maximum number of cloud variables
  * @return {CloudDataManager} The functions to be used when adding or removing a
  * cloud variable.
  */
 const cloudDataManager = cloudOptions => {
-    // const limit = 10;
     let count = 0;
 
     const canAddCloudVariable = () => count < cloudOptions.limit;
-
-    // const getNumberOfCloudVariables = () => count;
 
     const addCloudVariable = () => {
         count++;
@@ -174,7 +169,6 @@ const cloudDataManager = cloudOptions => {
 
     return {
         canAddCloudVariable,
-        // getNumberOfCloudVariables,
         addCloudVariable,
         removeCloudVariable,
         hasCloudVariables,
@@ -239,10 +233,9 @@ class Runtime extends EventEmitter {
          */
         this.flyoutBlocks = new Blocks(this, true /* force no glow */);
 
-        // ??? Maybe? ???
         /**
          * Storage container for monitor blocks.
-         * These will execute on a target maybe.
+         * These will execute on a target maybe
          * @type {!Blocks}
          */
         this.monitorBlocks = new Blocks(this, true /* force no glow */);
@@ -329,37 +322,20 @@ class Runtime extends EventEmitter {
          */
         this.turboMode = false;
 
-        // /**
-        //  * Whether the project is in "compatibility mode" (30 TPS).
-        //  * @type {Boolean}
-        //  */
-        // this.compatibilityMode = false;
-
-        // /**
-        //  * A reference to the current runtime stepping interval, set
-        //  * by a `setInterval`.
-        //  * @type {!number}
-        //  */
-        // this._steppingInterval = null;
-
         /**
-         * Manager for VM timers.
-         * @type {FrameLoop}
+         * tw: Responsible for managing the VM's many timers.
          */
-        // ??? Or '{!FrameLoop}'? ???
         this.frameLoop = new FrameLoop(this);
 
         /**
          * Current length of a step.
-         * Changes as mode switches, and used by the sequencer to calculate.
+         * Changes as mode switches, and used by the sequencer to calculate
          * WORK_TIME.
          * @type {!number}
          */
-        // this.currentStepTime = null;
-        // !!! ???
         this.currentStepTime = 1000 / 30;
 
-        // Set an intial value for 'this.currentMSecs'.
+        // Set an intial value for this.currentMSecs
         this.updateCurrentMSecs();
 
         /**
@@ -423,7 +399,7 @@ class Runtime extends EventEmitter {
         this.canAddCloudVariable = newCloudDataManager.canAddCloudVariable;
 
         /**
-         * A function that returns the number of cloud variables in the runtime.
+         * A function which returns the number of cloud variables in the runtime.
          * @returns {number}
          */
         this.getNumberOfCloudVariables = newCloudDataManager.getNumberOfCloudVariables;
@@ -452,14 +428,6 @@ class Runtime extends EventEmitter {
          */
         this.origin = null;
 
-        // ??? !!!
-        // this._initScratchLink();
-
-
-
-
-
-
         this._stageTarget = null;
 
         this.addonBlocks = {};
@@ -486,18 +454,22 @@ class Runtime extends EventEmitter {
         this._defaultStoredSettings = this._generateAllProjectOptions();
 
         /**
-         * 'packaged runtime' mode (used by the Sidekick Packager).
-         * Requirements: no editor is attached (like scratch-gui or -blocks), project will not be not exported (via 'saveProjectSb3()') and the original costume and sound data is not needed.
-         * Advantages: Projects load faster and use less memory (since large data amounts can be discarded and some processing be avoided by the runtime).
-         * Note: Despite that, copying projects is still possible since its projects' data is submitted to the runtime.
+         * TW: We support a "packaged runtime" mode. This can be used when:
+         *  - there will never be an editor attached such as scratch-gui or scratch-blocks
+         *  - the project will never be exported with saveProjectSb3()
+         *  - original costume and sound data is not needed
+         * In this mode, the runtime is able to discard large amounts of data and avoid some processing
+         * to make projects load faster and use less memory.
+         * This is not designed to protect projects from copying as someone can still copy the data that
+         * gets fed into the runtime in the first place.
+         * This mode is used by the TurboWarp Packager.
          */
         this.isPackaged = false;
 
-        // !!! HERE starting point for e.g. external communication? !!!
         /**
-         * Holds external communication method information.
-         * Enables internal scripts inside a project to send data to an external server.
-         * Note: Do not update this directly. 'Runtime.setExternalCommunicationMethod()' should be used for that instead.
+         * Contains information about the external communication methods that the scripts inside the project
+         * can use to send data from inside the project to an external server.
+         * Do not update this directly. Use Runtime.setExternalCommunicationMethod() instead.
          */
         this.externalCommunicationMethods = {
             cloudVariables: false,
@@ -508,19 +480,18 @@ class Runtime extends EventEmitter {
         });
 
         /**
-         * Regulates enforcements of privacy related features (e.g. reading data from a webcam) to protect a user's privacy.
-         * The setting refers to the state when the project has access to external communication methods.
-         * Requirements: Sidekick/scratch-render.
-         * Note: Do not update this directly. 'Runtime.setEnforcePrivacy()' should be used for that instead.
+         * If set to true, features such as reading colors from the user's webcam will be disabled
+         * when the project has access to any external communication method to protect user privacy.
+         * Requires TurboWarp/scratch-render.
+         * Do not update this directly. Use Runtime.setEnforcePrivacy() instead.
          */
         this.enforcePrivacy = true;
 
         /**
-         * Internal map: Opaque identifiers to callback for running that function.
+         * Internal map of opaque identifiers to the callback to run that function.
          * @type {Map<string, function>}
          */
         this.extensionButtons = new Map();
-
     }
 
     /**
@@ -528,7 +499,7 @@ class Runtime extends EventEmitter {
      * @const {number}
      */
     static get STAGE_WIDTH () {
-        // Initial value (value is set per runtime).
+        // tw: stage size is set per-runtime, this is only the initial value
         return 480;
     }
 
@@ -537,7 +508,7 @@ class Runtime extends EventEmitter {
      * @const {number}
      */
     static get STAGE_HEIGHT () {
-        // Initial value (value is set per runtime).
+        // tw: stage size is set per-runtime, this is only the initial value
         return 360;
     }
 
@@ -598,9 +569,8 @@ class Runtime extends EventEmitter {
         return 'TURBO_MODE_OFF';
     }
 
-
     /**
-     * Event name for changing runtime options.
+     * Event name for runtime options changing.
      * @const {string}
      */
     static get RUNTIME_OPTIONS_CHANGED () {
@@ -608,7 +578,7 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Event name for changing compiler options.
+     * Event name for compiler options changing.
      * @const {string}
      */
     static get COMPILER_OPTIONS_CHANGED () {
@@ -616,7 +586,7 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Event name for changing framerate.
+     * Event name for framerate changing.
      * @const {string}
      */
     static get FRAMERATE_CHANGED () {
@@ -624,7 +594,7 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Event name for changing interpolation.
+     * Event name for interpolation changing.
      * @const {string}
      */
     static get INTERPOLATION_CHANGED () {
@@ -632,7 +602,7 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Event name for changing stage size.
+     * Event name for stage size changing.
      * @const {string}
      */
     static get STAGE_SIZE_CHANGED () {
@@ -640,7 +610,7 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Event name for receiving compiler error.
+     * Event name for compiler errors.
      * @const {string}
      */
     static get COMPILE_ERROR () {
@@ -648,19 +618,18 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Event name when before executing any project's block.
+     * Event called before any block is executed.
      */
     static get BEFORE_EXECUTE () {
         return 'BEFORE_EXECUTE';
     }
 
     /**
-     * Event name when after executing every project's block.
+     * Event called after every block in the project has been executed.
      */
     static get AFTER_EXECUTE () {
         return 'AFTER_EXECUTE';
     }
-
 
     /**
      * Event name when the project is started (threads may not necessarily be
@@ -875,7 +844,6 @@ class Runtime extends EventEmitter {
         return 'RUNTIME_STARTED';
     }
 
-
     /**
      * Event name when the runtime tick loop has been stopped.
      * @const {string}
@@ -883,7 +851,6 @@ class Runtime extends EventEmitter {
     static get RUNTIME_STOPPED () {
         return 'RUNTIME_STOPPED';
     }
-
 
     /**
      * Event name when the runtime dispose has been called.
@@ -904,25 +871,25 @@ class Runtime extends EventEmitter {
     /**
      * How rapidly we try to step threads by default, in ms.
      */
-    // Note: Unused (left here to maintain compatibility).
     static get THREAD_STEP_INTERVAL () {
+        // tw: not used, only exists for compatibility
         return 1000 / 60;
     }
 
     /**
      * In compatibility mode, how rapidly we try to step threads, in ms.
      */
-    // Note: Unused (left here to maintain compatibility).
     static get THREAD_STEP_INTERVAL_COMPATIBILITY () {
+        // tw: not used, only exists for compatibility
         return 1000 / 30;
     }
 
     /**
-     * Clone limit (i.e. how many clones can be created at a time).
+     * How many clones can be created at a time.
      * @const {number}
      */
     static get MAX_CLONES () {
-        // Initial value (value is set per runtime in runtimeOptions).
+        // tw: clone limit is set per-runtime in runtimeOptions, this is only the initial value
         return 300;
     }
 
@@ -981,11 +948,11 @@ class Runtime extends EventEmitter {
                         }
                     }
                 }
-                // ??? Exact meaning of monitored? !!!
                 // Collect monitored from package.
                 if (packageObject.getMonitored) {
                     this.monitorBlockInfo = Object.assign({}, this.monitorBlockInfo, packageObject.getMonitored());
                 }
+
                 this.compilerRegisterExtension(packageName, packageObject);
             }
         }
@@ -1007,14 +974,12 @@ class Runtime extends EventEmitter {
      * @private
      */
     _makeExtensionMenuId (menuName, extensionId) {
-        // // ??? Why 'xmlEscape' not needed here anymore? !!!
-        // return `${extensionId}_menu_${xmlEscape(menuName)}`;
         return `${extensionId}_menu_${menuName}`;
     }
 
     /**
      * Create a context ("args") object for use with `formatMessage` on messages which might be target-specific.
-     * @param {Target} [target] - the target to use as context. If a target is not provided, default to the current.
+     * @param {Target} [target] - the target to use as context. If a target is not provided, default to the current
      * editing target or the stage.
      */
     makeMessageContextForTarget (target) {
@@ -1027,7 +992,7 @@ class Runtime extends EventEmitter {
 
     /**
      * Register the primitives provided by an extension.
-     * @param {ExtensionMetadata} extensionInfo - information about the extension (id, blocks, etc.).
+     * @param {ExtensionMetadata} extensionInfo - information about the extension (id, blocks, etc.)
      * @private
      */
     _registerExtensionPrimitives (extensionInfo) {
@@ -1068,10 +1033,9 @@ class Runtime extends EventEmitter {
         this.emit(Runtime.EXTENSION_ADDED, categoryInfo);
     }
 
-    // ??? Is it still needed because it is not used (remove it)? !!!
     /**
      * Reregister the primitives for an extension
-     * @param  {ExtensionMetadata} extensionInfo - new info (results of running getInfo) for an extension.
+     * @param  {ExtensionMetadata} extensionInfo - new info (results of running getInfo) for an extension
      * @private
      */
     _refreshExtensionPrimitives (extensionInfo) {
@@ -1087,8 +1051,8 @@ class Runtime extends EventEmitter {
     /**
      * Read extension information, convert menus, blocks and custom field types
      * and store the results in the provided category object.
-     * @param {CategoryInfo} categoryInfo - the category to be filled.
-     * @param {ExtensionMetadata} extensionInfo - the extension metadata to read.
+     * @param {CategoryInfo} categoryInfo - the category to be filled
+     * @param {ExtensionMetadata} extensionInfo - the extension metadata to read
      * @private
      */
     _fillExtensionCategory (categoryInfo, extensionInfo) {
@@ -1119,12 +1083,10 @@ class Runtime extends EventEmitter {
             }
         }
 
-
-        // !!! ???
         if (extensionInfo.docsURI) {
             const xml = '<button ' +
                 `text="${xmlEscape(maybeFormatMessage({
-                    id: 'gui.blocks.openDocs',
+                    id: 'tw.blocks.openDocs',
                     default: 'Open Documentation',
                     description: 'Button that opens site with more documentation about an extension'
                 }))}" ` +
@@ -1136,7 +1098,6 @@ class Runtime extends EventEmitter {
             };
             categoryInfo.blocks.push(block);
         }
-
 
         for (const blockInfo of extensionInfo.blocks) {
             try {
@@ -1163,8 +1124,8 @@ class Runtime extends EventEmitter {
     /**
      * Convert the given extension menu items into the scratch-blocks style of list of pairs.
      * If the menu is dynamic (e.g. the passed in argument is a function), return the input unmodified.
-     * @param {object} menuItems - an array of menu items or a function to retrieve such an array.
-     * @returns {object} - an array of 2 element arrays or the original input function.
+     * @param {object} menuItems - an array of menu items or a function to retrieve such an array
+     * @returns {object} - an array of 2 element arrays or the original input function
      * @private
      */
     _convertMenuItems (menuItems) {
@@ -1187,12 +1148,12 @@ class Runtime extends EventEmitter {
 
     /**
      * Build the scratch-blocks JSON for a menu. Note that scratch-blocks treats menus as a special kind of block.
-     * @param {string} menuName - the name of the menu.
-     * @param {object} menuInfo - a description of this menu and its items.
-     * @property {*} items - an array of menu items or a function to retrieve such an array.
-     * @property {boolean} [acceptReporters] - if true, allow dropping reporters onto this menu.
-     * @param {CategoryInfo} categoryInfo - the category for this block.
-     * @returns {object} - a JSON-esque object ready for scratch-blocks' consumption.
+     * @param {string} menuName - the name of the menu
+     * @param {object} menuInfo - a description of this menu and its items
+     * @property {*} items - an array of menu items or a function to retrieve such an array
+     * @property {boolean} [acceptReporters] - if true, allow dropping reporters onto this menu
+     * @param {CategoryInfo} categoryInfo - the category for this block
+     * @returns {object} - a JSON-esque object ready for scratch-blocks' consumption
      * @private
      */
     _buildMenuForScratchBlocks (menuName, menuInfo, categoryInfo) {
@@ -1243,12 +1204,12 @@ class Runtime extends EventEmitter {
 
     /**
      * Build the scratch-blocks JSON needed for a fieldType.
-     * Custom field types need to be namespaced to the extension so that extensions can't interfere with each other.
-     * @param  {string} fieldName - The name of the field.
-     * @param {string} output - The output of the field.
-     * @param {number} outputShape - Shape of the field (from ScratchBlocksConstants).
-     * @param {object} categoryInfo - The category the field belongs to (Used to set its colors).
-     * @returns {object} - Object to be inserted into scratch-blocks.
+     * Custom field types need to be namespaced to the extension so that extensions can't interfere with each other
+     * @param  {string} fieldName - The name of the field
+     * @param {string} output - The output of the field
+     * @param {number} outputShape - Shape of the field (from ScratchBlocksConstants)
+     * @param {object} categoryInfo - The category the field belongs to (Used to set its colors)
+     * @returns {object} - Object to be inserted into scratch-blocks
      */
     _buildCustomFieldTypeForScratchBlocks (fieldName, output, outputShape, categoryInfo) {
         return {
@@ -1273,9 +1234,9 @@ class Runtime extends EventEmitter {
 
     /**
      * Convert ExtensionBlockMetadata into data ready for scratch-blocks.
-     * @param {ExtensionBlockMetadata} blockInfo - the block info to convert.
-     * @param {CategoryInfo} categoryInfo - the category for this block.
-     * @returns {ConvertedBlockInfo} - the converted & original block information.
+     * @param {ExtensionBlockMetadata} blockInfo - the block info to convert
+     * @param {CategoryInfo} categoryInfo - the category for this block
+     * @returns {ConvertedBlockInfo} - the converted & original block information
      * @private
      */
     _convertForScratchBlocks (blockInfo, categoryInfo) {
@@ -1283,12 +1244,9 @@ class Runtime extends EventEmitter {
             return this._convertSeparatorForScratchBlocks(blockInfo);
         }
 
-
-        // !!! ???
         if (blockInfo.blockType === BlockType.LABEL) {
             return this._convertLabelForScratchBlocks(blockInfo);
         }
-
 
         if (blockInfo.blockType === BlockType.BUTTON) {
             return this._convertButtonForScratchBlocks(blockInfo, categoryInfo);
@@ -1299,9 +1257,9 @@ class Runtime extends EventEmitter {
 
     /**
      * Convert ExtensionBlockMetadata into scratch-blocks JSON & XML, and generate a proxy function.
-     * @param {ExtensionBlockMetadata} blockInfo - the block to convert.
-     * @param {CategoryInfo} categoryInfo - the category for this block.
-     * @returns {ConvertedBlockInfo} - the converted & original block information.
+     * @param {ExtensionBlockMetadata} blockInfo - the block to convert
+     * @param {CategoryInfo} categoryInfo - the category for this block
+     * @returns {ConvertedBlockInfo} - the converted & original block information
      * @private
      */
     _convertBlockForScratchBlocks (blockInfo, categoryInfo) {
@@ -1359,7 +1317,6 @@ class Runtime extends EventEmitter {
             }
             break;
         case BlockType.REPORTER:
-            // ??? TODO!? !!!
             blockJSON.output = blockInfo.allowDropAnywhere ? null : 'String'; // TODO: distinguish number & string here?
             blockJSON.outputShape = ScratchBlocksConstants.OUTPUT_SHAPE_ROUND;
             break;
@@ -1440,8 +1397,6 @@ class Runtime extends EventEmitter {
 
         const mutation = blockInfo.isDynamic ? `<mutation blockInfo="${xmlEscape(JSON.stringify(blockInfo))}"/>` : '';
         const inputs = context.inputList.join('');
-        // const blockXML = `<block type="${extendedOpcode}">${mutation}${inputs}</block>`;
-        // !!! Why added here exactly? ???
         const blockXML = `<block type="${xmlEscape(extendedOpcode)}">${mutation}${inputs}</block>`;
 
         return {
@@ -1451,12 +1406,11 @@ class Runtime extends EventEmitter {
         };
     }
 
-    // ??? Should '@param {CategoryInfo} categoryInfo' be removed? !!!
     /**
      * Generate a separator between blocks categories or sub-categories.
-     * @param {ExtensionBlockMetadata} blockInfo - the block to convert.
-     * @param {CategoryInfo} categoryInfo - the category for this block.
-     * @returns {ConvertedBlockInfo} - the converted & original block information.
+     * @param {ExtensionBlockMetadata} blockInfo - the block to convert
+     * @param {CategoryInfo} categoryInfo - the category for this block
+     * @returns {ConvertedBlockInfo} - the converted & original block information
      * @private
      */
     _convertSeparatorForScratchBlocks (blockInfo) {
@@ -1466,11 +1420,10 @@ class Runtime extends EventEmitter {
         };
     }
 
-
     /**
      * Generate a label between blocks categories or sub-categories.
-     * @param {ExtensionBlockMetadata} blockInfo - the block to convert.
-     * @returns {ConvertedBlockInfo} - the converted & original block information.
+     * @param {ExtensionBlockMetadata} blockInfo - the block to convert
+     * @returns {ConvertedBlockInfo} - the converted & original block information
      * @private
      */
     _convertLabelForScratchBlocks (blockInfo) {
@@ -1480,26 +1433,17 @@ class Runtime extends EventEmitter {
         };
     }
 
-
     /**
      * Convert a button for scratch-blocks. A button has no opcode but specifies a callback name in the `func` field.
-     * @param {ExtensionBlockMetadata} buttonInfo - the button to convert.
-     * @property {string} func - the callback name.
-     * @param {CategoryInfo} categoryInfo - the category for this button.
-     * @returns {ConvertedBlockInfo} - the converted & original button information.
+     * @param {ExtensionBlockMetadata} buttonInfo - the button to convert
+     * @property {string} func - the callback name
+     * @param {CategoryInfo} categoryInfo - the category for this button
+     * @returns {ConvertedBlockInfo} - the converted & original button information
      * @private
      */
-    // _convertButtonForScratchBlocks (buttonInfo) {
-    //     // for now we only support these pre-defined callbacks handled in scratch-blocks
-    //     const supportedCallbackKeys = ['MAKE_A_LIST', 'MAKE_A_PROCEDURE', 'MAKE_A_VARIABLE'];
-    //     if (supportedCallbackKeys.indexOf(buttonInfo.func) < 0) {
-    //         log.error(`Custom button callbacks not supported yet: ${buttonInfo.func}`);
-    //     }
     _convertButtonForScratchBlocks (buttonInfo, categoryInfo) {
         const extensionMessageContext = this.makeMessageContextForTarget();
         const buttonText = maybeFormatMessage(buttonInfo.text, extensionMessageContext);
-
-
         const nativeCallbackKeys = ['MAKE_A_LIST', 'MAKE_A_PROCEDURE', 'MAKE_A_VARIABLE'];
         if (nativeCallbackKeys.includes(buttonInfo.func)) {
             return {
@@ -1507,31 +1451,25 @@ class Runtime extends EventEmitter {
                 xml: `<button text="${xmlEscape(buttonText)}" callbackKey="${xmlEscape(buttonInfo.func)}"></button>`
             };
         }
-        // GUI forwards callbacks with data.
+        // Callbacks with data will be forwarded from GUI
         const id = `${categoryInfo.id}_${buttonInfo.func}`;
-        // Extension manager sets 'callFunc'
+        // callFunc is set by extension manager
         this.extensionButtons.set(id, buttonInfo.callFunc);
-
-
         return {
             info: buttonInfo,
-            // xml: `<button text="${buttonText}" callbackKey="${buttonInfo.func}"></button>`
-            // !!! ???
             xml: `<button text="${xmlEscape(buttonText)}"` +
                 ' callbackKey="EXTENSION_CALLBACK"' +
                 ` callbackData="${xmlEscape(id)}"></button>`
         };
     }
 
-
     handleExtensionButtonPress (buttonData) {
         const callback = this.extensionButtons.get(buttonData);
         callback();
     }
 
-
     /**
-     * Helper for _convertPlaceholders which handles inline images which are a specialized case of block "arguments".
+     * Helper for _convertPlaceholdes which handles inline images which are a specialized case of block "arguments".
      * @param {object} argInfo Metadata about the inline image as specified by the extension
      * @return {object} JSON blob for a scratch-blocks image field.
      * @private
@@ -1543,7 +1481,6 @@ class Runtime extends EventEmitter {
         return {
             type: 'field_image',
             src: argInfo.dataURI || '',
-            // ??? 'TODO'? !!!
             // TODO these probably shouldn't be hardcoded...?
             width: 24,
             height: 24,
@@ -1564,10 +1501,6 @@ class Runtime extends EventEmitter {
      * @private
      */
     _convertPlaceholders (context, match, placeholder) {
-        // !!! Why remove? ???
-        // // Sanitize the placeholder to ensure valid XML
-        // placeholder = placeholder.replace(/[<"&]/, '_');
-
         // Determine whether the argument type is one of the known standard field types
         const argInfo = context.blockInfo.arguments[placeholder] || {};
         let argTypeInfo = ArgumentTypeMap[argInfo.type] || {};
@@ -1595,9 +1528,6 @@ class Runtime extends EventEmitter {
             };
 
             const defaultValue =
-                // typeof argInfo.defaultValue === 'undefined' ? '' :
-                //     xmlEscape(maybeFormatMessage(argInfo.defaultValue, this.makeMessageContextForTarget()).toString());
-                // !!! Why change to 'null' and remove 'maybeFormatMessage'? ???
                 typeof argInfo.defaultValue === 'undefined' ? null :
                     maybeFormatMessage(argInfo.defaultValue, this.makeMessageContextForTarget()).toString();
 
@@ -1632,22 +1562,17 @@ class Runtime extends EventEmitter {
 
             // <value> is the ScratchBlocks name for a block input.
             if (valueName) {
-                // context.inputList.push(`<value name="${placeholder}">`);
                 context.inputList.push(`<value name="${xmlEscape(placeholder)}">`);
             }
 
-            // ???
             // The <shadow> is a placeholder for a reporter and is visible when there's no reporter in this input.
             // Boolean inputs don't need to specify a shadow in the XML.
             if (shadowType) {
-                // context.inputList.push(`<shadow type="${shadowType}">`);
                 context.inputList.push(`<shadow type="${xmlEscape(shadowType)}">`);
             }
 
             // A <field> displays a dynamic value: a user-editable text field, a drop-down menu, etc.
             // Leave out the field if defaultValue or fieldName are not specified
-            // if (defaultValue && fieldName) {
-            //     context.inputList.push(`<field name="${fieldName}">${defaultValue}</field>`);
             if (defaultValue !== null && fieldName) {
                 context.inputList.push(`<field name="${xmlEscape(fieldName)}">${xmlEscape(defaultValue)}</field>`);
             }
@@ -1672,9 +1597,9 @@ class Runtime extends EventEmitter {
 
     /**
      * @returns {Array.<object>} scratch-blocks XML for each category of extension blocks, in category order.
-     * @param {?Target} [target] - the active editing target (optional).
-     * @property {string} id - the category / extension ID.
-     * @property {string} xml - the XML text for this category, starting with `<category>` and ending with `</category>`.
+     * @param {?Target} [target] - the active editing target (optional)
+     * @property {string} id - the category / extension ID
+     * @property {string} xml - the XML text for this category, starting with `<category>` and ending with `</category>`
      */
     getBlocksXML (target) {
         return this._blockInfo.map(categoryInfo => {
@@ -1712,8 +1637,6 @@ class Runtime extends EventEmitter {
                 statusButtonXML = 'showStatusButton="true"';
             }
 
-
-            // !!! ???
             let xml = `<category name="${xmlEscape(name)}"`;
             xml += ` id="${xmlEscape(categoryInfo.id)}"`;
             xml += ` ${statusButtonXML}`;
@@ -1722,12 +1645,8 @@ class Runtime extends EventEmitter {
             xml += paletteBlocks.map(block => block.xml).join('');
             xml += '</category>';
 
-
             return {
                 id: categoryInfo.id,
-                // xml: `<category name="${name}" id="${categoryInfo.id}" ${statusButtonXML} ${colorXML} ${menuIconXML}>${
-                //     paletteBlocks.map(block => block.xml).join('')}</category>`
-                // !!! Why change? ???
                 xml
             };
         });
@@ -1740,37 +1659,6 @@ class Runtime extends EventEmitter {
         return this._blockInfo.reduce(
             (result, categoryInfo) => result.concat(categoryInfo.blocks.map(blockInfo => blockInfo.json)), []);
     }
-
-    // !!! CHANGE or rather: Is '_initScratchLink' (still) needed (or perhaps even causing problems) after the changes in Update1 for Sidekick? ???
-    // /**
-    //  * One-time initialization for Scratch Link support.
-    //  */
-    // _initScratchLink () {
-    //     /* global globalThis */
-    //     // Check that we're actually in a real browser, not Node.js or JSDOM, and we have a valid-looking origin.
-    //     if (globalThis.document &&
-    //         globalThis.document.getElementById &&
-    //         globalThis.origin &&
-    //         globalThis.origin !== 'null' &&
-    //         globalThis.navigator &&
-    //         globalThis.navigator.userAgent &&
-    //         globalThis.navigator.userAgent.includes &&
-    //         !globalThis.navigator.userAgent.includes('Node.js') &&
-    //         !globalThis.navigator.userAgent.includes('jsdom')
-    //     ) {
-    //         // Create a script tag for the Scratch Link browser extension, unless one already exists
-    //         const scriptElement = document.getElementById('scratch-link-extension-script');
-    //         if (!scriptElement) {
-    //             const script = document.createElement('script');
-    //             script.id = 'scratch-link-extension-script';
-    //             document.body.appendChild(script);
-
-    //             // Tell the browser extension to inject its script.
-    //             // If the extension isn't present or isn't active, this will do nothing.
-    //             globalThis.postMessage('inject-scratch-link-script', globalThis.origin);
-    //         }
-    //     }
-    // }
 
     /**
      * Get a scratch link socket.
@@ -1797,12 +1685,6 @@ class Runtime extends EventEmitter {
      * @returns {ScratchLinkSocket} The new scratch link socket (a WebSocket object)
      */
     _defaultScratchLinkSocketFactory (type) {
-        // const Scratch = self.Scratch;
-        // const ScratchLinkSafariSocket = Scratch && Scratch.ScratchLinkSafariSocket;
-        // // detect this every time in case the user turns on the extension after loading the page
-        // const useSafariSocket = ScratchLinkSafariSocket && ScratchLinkSafariSocket.isSafariHelperCompatible();
-        // return useSafariSocket ? new ScratchLinkSafariSocket(type) : new ScratchLinkWebSocket(type);
-
         return new ScratchLinkWebSocket(type);
     }
 
@@ -1862,7 +1744,7 @@ class Runtime extends EventEmitter {
 
     /**
      * Emit an event to indicate that the microphone is being used to stream audio.
-     * @param {boolean} listening - `true` if the microphone is currently listening; `false` if not.
+     * @param {boolean} listening - true if the microphone is currently listening.
      */
     emitMicListening (listening) {
         this.emit(Runtime.MIC_LISTENING, listening);
@@ -1932,12 +1814,9 @@ class Runtime extends EventEmitter {
     attachStorage (storage) {
         this.storage = storage;
 
-
-        // !!! ???
-        // If 'packaged runtime mode' enabled:
         if (this.isPackaged) {
-            // Do not generate real asset IDs (time consuming and not worth the effort).
-            // However, still assign unique IDs to assets (to preserve them).
+            // In packaged runtime mode, generating real asset IDs is a waste of time.
+            // We do still want to preserve every asset having a unique ID.
             const originalCreateAsset = storage.createAsset;
             let assetIdCounter = 0;
             // eslint-disable-next-line no-unused-vars
@@ -1951,7 +1830,7 @@ class Runtime extends EventEmitter {
                     dataFormat,
                     data,
                     assetId,
-                    // Set Boolean relating 'generating real asset IDs' always to false.
+                    // Never generate real asset ID
                     false
                 );
             };
@@ -1981,18 +1860,14 @@ class Runtime extends EventEmitter {
 
         thread.pushStack(id);
         this.threads.push(thread);
-
-
         if (!thread.stackClick && !thread.updateMonitor) {
             this.threadMap.set(thread.getId(), thread);
         }
-        // Compile new threads.
-        // !!! Why not compile 'monitor threads'? ???
-        // However, do not attempt monitor thread compiles.
+
+        // tw: compile new threads. Do not attempt to compile monitor threads.
         if (!(opts && opts.updateMonitor) && this.compilerOptions.enabled) {
             thread.tryCompile();
         }
-
 
         return thread;
     }
@@ -2022,17 +1897,13 @@ class Runtime extends EventEmitter {
         newThread.updateMonitor = thread.updateMonitor;
         newThread.blockContainer = thread.blockContainer;
         newThread.pushStack(thread.topBlock);
-
-
-        // On 'restart thread' check whether a compile of the previous script was attempted.
+        // tw: when a thread is restarted, we have to check whether the previous script was attempted to be compiled.
         if (thread.triedToCompile && this.compilerOptions.enabled) {
             newThread.tryCompile();
         }
         if (!newThread.stackClick && !newThread.updateMonitor) {
             this.threadMap.set(newThread.getId(), newThread);
         }
-
-
         const i = this.threads.indexOf(thread);
         if (i > -1) {
             this.threads[i] = newThread;
@@ -2042,11 +1913,9 @@ class Runtime extends EventEmitter {
         return thread;
     }
 
-
     emitCompileError (target, error) {
         this.emit(Runtime.COMPILE_ERROR, target, error);
     }
-
 
     /**
      * Return whether a thread is currently active/running.
@@ -2185,11 +2054,9 @@ class Runtime extends EventEmitter {
             optMatchFields[opts] = optMatchFields[opts].toUpperCase();
         }
 
-
-        // Goal: Loops' optimization in the following 'allScriptsByOpcodeDo' callback.
-        // Required Assumption: All new threads will not interfere with each other.
+        // tw: By assuming that all new threads will not interfere with eachother, we can optimize the loops
+        // inside the allScriptsByOpcodeDo callback below.
         const startingThreadListLength = this.threads.length;
-
 
         // Consider all scripts, looking for hats with opcode `requestedHatOpcode`.
         this.allScriptsByOpcodeDo(requestedHatOpcode, (script, target) => {
@@ -2213,28 +2080,14 @@ class Runtime extends EventEmitter {
             if (hatMeta.restartExistingThreads) {
                 // If `restartExistingThreads` is true, we should stop
                 // any existing threads starting with the top block.
-                // for (let i = 0; i < this.threads.length; i++) {
-                //     if (this.threads[i].target === target &&
-                //         this.threads[i].topBlock === topBlockId &&
-                //         // stack click threads and hat threads can coexist
-                //         !this.threads[i].stackClick) {
-                //         newThreads.push(this._restartThread(this.threads[i]));
-                //         return;
-                //     }
-                // }
-
-
                 const existingThread = this.threadMap.get(Thread.getIdFromTargetAndBlock(target, topBlockId));
                 if (existingThread) {
                     newThreads.push(this._restartThread(existingThread));
                     return;
                 }
-
-
             } else {
                 // If `restartExistingThreads` is false, we should
                 // give up if any threads with the top block are running.
-                // for (let j = 0; j < this.threads.length; j++) {
                 for (let j = 0; j < startingThreadListLength; j++) {
                     if (this.threads[j].target === target &&
                         this.threads[j].topBlock === topBlockId &&
@@ -2252,10 +2105,7 @@ class Runtime extends EventEmitter {
         // For compatibility with Scratch 2, edge triggered hats need to be processed before
         // threads are stepped. See ScratchRuntime.as for original implementation
         newThreads.forEach(thread => {
-            // execute(this.sequencer, thread);
-            // thread.goToNextBlock();
-            // !!! ???
-            // Step only not compiled threads (since hat block is not executable).
+            // tw: do not step compiled threads, the hat block can't be executed
             if (!thread.isCompiled) {
                 execute(this.sequencer, thread);
                 thread.goToNextBlock();
@@ -2276,20 +2126,14 @@ class Runtime extends EventEmitter {
         });
 
         this.targets.map(this.disposeTarget, this);
-
-
-        // Emit 'MONITORS_UPDATE' here explicity (no dependence on implicit behavior of '_step()').
+        // tw: explicitly emit a MONITORS_UPDATE instead of relying on implicit behavior of _step()
         const emptyMonitorState = OrderedMap({});
         if (!emptyMonitorState.equals(this._monitorState)) {
             this._monitorState = emptyMonitorState;
             this.emit(Runtime.MONITORS_UPDATE, this._monitorState);
         }
-
-
-        // this._monitorState = OrderedMap({});
         this.emit(Runtime.RUNTIME_DISPOSED);
         this.ioDevices.clock.resetProjectTimer();
-        // !!! TODO? ???
         // @todo clear out extensions? turboMode? etc.
 
         // *********** Cloud *******************
@@ -2304,19 +2148,10 @@ class Runtime extends EventEmitter {
         this.ioDevices.cloud.clear();
 
         // Reset runtime cloud data info
-        // const newCloudDataManager = cloudDataManager();
-
-
         const newCloudDataManager = cloudDataManager(this.cloudOptions);
-
-
         this.hasCloudData = newCloudDataManager.hasCloudVariables;
         this.canAddCloudVariable = newCloudDataManager.canAddCloudVariable;
-
-
         this.getNumberOfCloudVariables = newCloudDataManager.getNumberOfCloudVariables;
-
-
         this.addCloudVariable = this._initializeAddCloudVariable(newCloudDataManager);
         this.removeCloudVariable = this._initializeRemoveCloudVariable(newCloudDataManager);
     }
@@ -2330,8 +2165,6 @@ class Runtime extends EventEmitter {
     addTarget (target) {
         this.targets.push(target);
         this.executableTargets.push(target);
-
-
         if (target.isStage && !this._stageTarget) {
             this._stageTarget = target;
         }
@@ -2403,8 +2236,6 @@ class Runtime extends EventEmitter {
             // Remove from list of targets.
             return false;
         });
-
-
         if (this._stageTarget === disposingTarget) {
             this._stageTarget = null;
         }
@@ -2436,12 +2267,7 @@ class Runtime extends EventEmitter {
     greenFlag () {
         this.stopAll();
         this.emit(Runtime.PROJECT_START);
-
-
-        // !!! ???
         this.updateCurrentMSecs();
-
-
         this.ioDevices.clock.resetProjectTimer();
         this.targets.forEach(target => target.clearEdgeActivatedValues());
         // Inform all targets of the green flag.
@@ -2474,21 +2300,19 @@ class Runtime extends EventEmitter {
         if (this.sequencer.activeThread !== null) {
             this._stopThread(this.sequencer.activeThread);
         }
-        // ??? !!!
         // Remove all remaining threads from executing in the next tick.
         this.threads = [];
-
-
         this.threadMap.clear();
     }
-
 
     _renderInterpolatedPositions () {
         const frameStarted = this._lastStepTime;
         const now = Date.now();
         const timeSinceStart = now - frameStarted;
         const progressInFrame = Math.min(1, Math.max(0, timeSinceStart / this.currentStepTime));
+
         interpolate.interpolate(this, progressInFrame);
+
         if (this.renderer) {
             this.renderer.draw();
         }
@@ -2503,19 +2327,14 @@ class Runtime extends EventEmitter {
         }
     }
 
-
     /**
      * Repeatedly run `sequencer.stepThreads` and filter out
      * inactive threads after each iteration.
      */
     _step () {
-
-
-        // !!! ???
         if (this.interpolationEnabled) {
             interpolate.setupInitialState(this);
         }
-
 
         if (this.profiler !== null) {
             if (stepProfilerId === -1) {
@@ -2526,10 +2345,7 @@ class Runtime extends EventEmitter {
 
         // Clean up threads that were told to stop during or since the last step
         this.threads = this.threads.filter(thread => !thread.isKilled);
-
-
         this.updateThreadMap();
-
 
         // Find all edge-activated hats, and add them to threads to be evaluated.
         for (const hatType in this._hats) {
@@ -2547,20 +2363,12 @@ class Runtime extends EventEmitter {
             }
             this.profiler.start(stepThreadsProfilerId);
         }
-
-
         this.emit(Runtime.BEFORE_EXECUTE);
-
-
         const doneThreads = this.sequencer.stepThreads();
         if (this.profiler !== null) {
             this.profiler.stop();
         }
-
-
         this.emit(Runtime.AFTER_EXECUTE);
-
-
         this._updateGlows(doneThreads);
         // Add done threads so that even if a thread finishes within 1 frame, the green
         // flag will still indicate that a script ran.
@@ -2578,18 +2386,12 @@ class Runtime extends EventEmitter {
                 }
                 this.profiler.start(rendererDrawProfilerId);
             }
-            // this.renderer.draw();
-
-
-            // !!! rAF loop? ???
-            // Note: Special cases make the check via 'animation frame loop' more reliable than via 'interpolationEnabled'.
-            // If the document is not hidden and no rAF loop running:
+            // tw: do not draw if document is hidden or a rAF loop is running
+            // Checking for the animation frame loop is more reliable than using
+            // interpolationEnabled in some edge cases
             if (!document.hidden && !this.frameLoop._interpolationAnimation) {
-                // Draw.
                 this.renderer.draw();
             }
-
-
             if (this.profiler !== null) {
                 this.profiler.stop();
             }
@@ -2610,8 +2412,6 @@ class Runtime extends EventEmitter {
             this.profiler.reportFrames();
         }
 
-
-        // !!! Were / for what exactly is interpolation needed / used? ???
         if (this.interpolationEnabled) {
             this._lastStepTime = Date.now();
         }
@@ -2656,18 +2456,11 @@ class Runtime extends EventEmitter {
 
     /**
      * Set whether we are in 30 TPS compatibility mode.
-     * @param {boolean} compatibilityModeOn - `true` if in compatibility mode; `false` if not.
+     * @param {boolean} compatibilityModeOn True iff in compatibility mode.
      */
     setCompatibilityMode (compatibilityModeOn) {
-        // this.compatibilityMode = compatibilityModeOn;
-        // if (this._steppingInterval) {
-        //     clearInterval(this._steppingInterval);
-        //     this._steppingInterval = null;
-        //     this.start();
-        // }
-
-
-        // Note: Functionality  of 'compatibility mode' replaced with generic framerate setter (method kept here to maintain compatibility).
+        // tw: "compatibility mode" is replaced with a generic framerate setter,
+        // but this method is kept for compatibility
         if (compatibilityModeOn) {
             this.setFramerate(30);
         } else {
@@ -2676,25 +2469,23 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Change runtime target frames per second (fps).
-     * @param {number} framerate Target fps.
+     * tw: Change runtime target frames per second
+     * @param {number} framerate Target frames per second
      */
     setFramerate (framerate) {
-        // Higher framerate values are not necessary and may lead to problems like breaking the sequencer.
-        // Note: JS spec states that intervals run at a maximum of once every 4ms (i.e. 250/s).
+        // Setting framerate to anything greater than this is unnecessary and can break the sequencer
+        // Additionally, the JS spec says intervals can't run more than once every 4ms (250/s) anyways
         if (framerate > 250) framerate = 250;
-        // Set negative framerate values to 1.
-        // Note: 0 is a predefined value that equates to the functionality of 'matching device screen refresh rate'.
+        // Convert negative framerates to 1FPS
+        // Note that 0 is a special value which means "matching device screen refresh rate"
         if (framerate < 0) framerate = 1;
         this.frameLoop.setFramerate(framerate);
         this.emit(Runtime.FRAMERATE_CHANGED, framerate);
     }
 
-
-    // !!!
     /**
-     * Set interpolation feature state.
-     * @param {boolean} interpolationEnabled - `true` to enable interpolation; `false` to disable.
+     * tw: Enable or disable interpolation.
+     * @param {boolean} interpolationEnabled True if interpolation should be enabled.
      */
     setInterpolation (interpolationEnabled) {
         this.interpolationEnabled = interpolationEnabled;
@@ -2703,8 +2494,8 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Set runtime options.
-     * @param {*} runtimeOptions - new runtime options.
+     * tw: Update runtime options
+     * @param {*} runtimeOptions New options
      */
     setRuntimeOptions (runtimeOptions) {
         this.runtimeOptions = Object.assign({}, this.runtimeOptions, runtimeOptions);
@@ -2715,8 +2506,8 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Set compiler options.
-     * @param {*} compilerOptions - new compiler options.
+     * tw: Update compiler options
+     * @param {*} compilerOptions New options
      */
     setCompilerOptions (compilerOptions) {
         this.compilerOptions = Object.assign({}, this.compilerOptions, compilerOptions);
@@ -2725,9 +2516,9 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Set stage dimensions (width, height). Tells the renderer about updated size.
-     * @param {number} width - new stage width.
-     * @param {number} height - new stage height.
+     * Change width and height of stage. This will also inform the renderer of the new stage size.
+     * @param {number} width New stage width
+     * @param {number} height New stage height
      */
     setStageSize (width, height) {
         width = Math.round(Math.max(1, width));
@@ -2735,7 +2526,7 @@ class Runtime extends EventEmitter {
         if (this.stageWidth !== width || this.stageHeight !== height) {
             const deltaX = width - this.stageWidth;
             const deltaY = height - this.stageHeight;
-            // Preserve monitor location relative to the stage center.
+            // Preserve monitor location relative to the center of the stage
             if (this._monitorState.size > 0) {
                 const offsetX = deltaX / 2;
                 const offsetY = deltaY / 2;
@@ -2762,15 +2553,13 @@ class Runtime extends EventEmitter {
         this.emit(Runtime.STAGE_SIZE_CHANGED, width, height);
     }
 
-    // !!! ???
     // eslint-disable-next-line no-unused-vars
     setInEditor (inEditor) {
         // no-op
     }
 
     /**
-     * Enable the 'packaged runtime mode'.
-     * Note: One-way operation.
+     * TW: Enable "packaged runtime" mode. This is a one-way operation.
      */
     convertToPackagedRuntime () {
         if (this.storage) {
@@ -2781,7 +2570,7 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Reset cache of all block containers.
+     * tw: Reset the cache of all block containers.
      */
     resetAllCaches () {
         for (const target of this.targets) {
@@ -2794,13 +2583,13 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Add 'addon block'.
-     * @param {object} options - the options object.
-     * @param {string} options.procedureCode - specification of the block's ID.
-     * @param {function} options.callback - callback, called with (args, BlockUtility). May return a promise.
-     * @param {string[]} [options.arguments] - optional: Names of the accepted arguments.
-     * @param {boolean} [options.hidden] - `true` if the block should be included in the block palette; `false` if not.
-     * @param {1|2} [options.return] - specification of the block's type. Set 1 for round reporter, 2 for boolean reported, leave empty for statement.
+     * Add an "addon block"
+     * @param {object} options Options object
+     * @param {string} options.procedureCode The ID of the block
+     * @param {function} options.callback The callback, called with (args, BlockUtility). May return a promise.
+     * @param {string[]} [options.arguments] Names of the arguments accepted. Optional if no arguments.
+     * @param {boolean} [options.hidden] True to not include this block in the block palette
+     * @param {1|2} [options.return] 1 for round reporter, 2 for boolean reported, leave empty for statement.
      */
     addAddonBlock (options) {
         const procedureCode = options.procedureCode;
@@ -2818,20 +2607,18 @@ class Runtime extends EventEmitter {
             const ID = 'a-b';
             let blockInfo = this._blockInfo.find(i => i.id === ID);
             if (!blockInfo) {
-                // !!! CHANGE !!!
                 // eslint-disable-next-line max-len
                 const ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><path d="M14.92 1.053A13.835 13.835 0 0 0 1.052 14.919v18.162a13.835 13.835 0 0 0 13.866 13.866h18.162a13.835 13.835 0 0 0 13.866-13.866V14.919A13.835 13.835 0 0 0 33.081 1.053zm16.6 12.746L41.72 24 31.52 34.201l-3.276-3.275L35.17 24l-6.926-6.926Zm-15.116.073 3.278 3.278L12.83 24l6.926 6.926L16.48 34.2 6.28 24Z" style="fill:#29beb8;fill-opacity:1;stroke:none;stroke-width:1.51371;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"/></svg>';
                 blockInfo = {
                     id: ID,
                     name: maybeFormatMessage({
-                        id: 'gui.blocks.addons',
+                        id: 'tw.blocks.addons',
                         default: 'Addons',
                         description: 'Name of the addon block category in the extension list'
                     }),
-                    // !!! CHANGE !!!
-                    color1: '#0FBD8C',
-                    color2: '#0DA57A',
-                    color3: '#0B8E69',
+                    color1: '#29beb8',
+                    color2: '#3aa8a4',
+                    color3: '#3aa8a4',
                     menuIconURI: `data:image/svg+xml;,${encodeURIComponent(ICON)}`,
                     blocks: [],
                     customFieldTypes: {},
@@ -2841,7 +2628,6 @@ class Runtime extends EventEmitter {
             }
             blockInfo.blocks.push({
                 info: {},
-                // !!! ???
                 xml:
                    '<block type="procedures_call" gap="16"><mutation generateshadows="true" warp="false"' +
                     ` proccode="${xmlEscape(procedureCode)}"` +
@@ -2952,28 +2738,21 @@ class Runtime extends EventEmitter {
 
     storeProjectOptions () {
         const options = this.generateDifferingProjectOptions();
-        // !!! TODO !!!
         // TODO: translate
-        // !!! CHANGE !!!
-        // const text = `Configuration for https://mixality.github.io/Sidekick/\nYou can move, resize, and minimize this comment, but don't edit it by hand. This comment can be deleted to remove the stored settings.\n${ExtendedJSON.stringify(options)}${COMMENT_CONFIG_MAGIC}`;
-        const text = `Configuration for https://menersar.github.io/Sidekick/\nYou can move, resize, and minimize this comment, but don't edit it by hand. This comment can be deleted to remove the stored settings.\n${ExtendedJSON.stringify(options)}${COMMENT_CONFIG_MAGIC}`;
-        // const text = `Configuration for https://turbowarp.org/\nYou can move, resize, and minimize this comment, but don't edit it by hand. This comment can be deleted to remove the stored settings.\n${ExtendedJSON.stringify(options)}${COMMENT_CONFIG_MAGIC}`;
+        const text = `Configuration for https://turbowarp.org/\nYou can move, resize, and minimize this comment, but don't edit it by hand. This comment can be deleted to remove the stored settings.\n${ExtendedJSON.stringify(options)}${COMMENT_CONFIG_MAGIC}`;
         const existingComment = this.findProjectOptionsComment();
         if (existingComment) {
             existingComment.text = text;
         } else {
             const target = this.getTargetForStage();
-            // !!! TODO !!!
             // TODO: smarter position logic
             target.createComment(uid(), null, text, 50, 50, 350, 170, false);
         }
         this.emitProjectChanged();
     }
 
-    // !!! EARGERLY? ???
-    // !!! Why is the function called 'precompile' (if it (re)compiles)? ???
     /**
-     * (Re)compile all project's scripts.
+     * Eagerly (re)compile all scripts within this project.
      */
     precompile () {
         this.allScriptsDo((topBlockId, target) => {
@@ -2991,7 +2770,6 @@ class Runtime extends EventEmitter {
         this.resetAllCaches();
         this.debug = true;
     }
-
 
     /**
      * Emit glows/glow clears for scripts after a single tick.
@@ -3070,7 +2848,7 @@ class Runtime extends EventEmitter {
      * "Quiet" a script's glow: stop the VM from generating glow/unglow events
      * about that script. Use when a script has just been deleted, but we may
      * still be tracking glow data about it.
-     * @param {!string} scriptBlockId - ID of top-level block in script to quiet.
+     * @param {!string} scriptBlockId Id of top-level block in script to quiet.
      */
     quietGlow (scriptBlockId) {
         const index = this._scriptGlowsPreviousFrame.indexOf(scriptBlockId);
@@ -3081,8 +2859,8 @@ class Runtime extends EventEmitter {
 
     /**
      * Emit feedback for block glowing (used in the sequencer).
-     * @param {?string} blockId - ID for the block to update glow.
-     * @param {boolean} isGlowing - `true` to turn on glow; `false` to turn off.
+     * @param {?string} blockId ID for the block to update glow
+     * @param {boolean} isGlowing True to turn on glow; false to turn off.
      */
     glowBlock (blockId, isGlowing) {
         if (isGlowing) {
@@ -3094,8 +2872,8 @@ class Runtime extends EventEmitter {
 
     /**
      * Emit feedback for script glowing.
-     * @param {?string} topBlockId - ID for the top block to update glow.
-     * @param {boolean} isGlowing - `true` to turn on glow; `false` to turn off.
+     * @param {?string} topBlockId ID for the top block to update glow
+     * @param {boolean} isGlowing True to turn on glow; false to turn off.
      */
     glowScript (topBlockId, isGlowing) {
         if (isGlowing) {
@@ -3106,17 +2884,17 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Emit whether blocks are being dragged over gui.
-     * @param {boolean} areBlocksOverGui - `true` if blocks are dragged out of blocks workspace; false otherwise.
+     * Emit whether blocks are being dragged over gui
+     * @param {boolean} areBlocksOverGui True if blocks are dragged out of blocks workspace, false otherwise
      */
     emitBlockDragUpdate (areBlocksOverGui) {
         this.emit(Runtime.BLOCK_DRAG_UPDATE, areBlocksOverGui);
     }
 
     /**
-     * Emit event to indicate that the block drag has ended with the blocks outside the blocks workspace.
-     * @param {Array.<object>} blocks The set of blocks dragged to the GUI.
-     * @param {string} topBlockId The original id of the top block being dragged.
+     * Emit event to indicate that the block drag has ended with the blocks outside the blocks workspace
+     * @param {Array.<object>} blocks The set of blocks dragged to the GUI
+     * @param {string} topBlockId The original id of the top block being dragged
      */
     emitBlockEndDrag (blocks, topBlockId) {
         this.emit(Runtime.BLOCK_DRAG_END, blocks, topBlockId);
@@ -3138,10 +2916,8 @@ class Runtime extends EventEmitter {
      */
     requestAddMonitor (monitor) {
         const id = monitor.get('id');
-        // !!! 'if it exists in the state' (which state), 'update monitor' (where is it updated, as stated in the following line)? ???
-        // Update monitor if it exists in the state:
-        if (!this.requestUpdateMonitor(monitor)) {
-            // If the monitor did not exist in the state, add it.
+        if (!this.requestUpdateMonitor(monitor)) { // update monitor if it exists in the state
+            // if the monitor did not exist in the state, add it
             this._monitorState = this._monitorState.set(id, monitor);
         }
     }
@@ -3157,7 +2933,7 @@ class Runtime extends EventEmitter {
         const id = monitor.get('id');
         if (this._monitorState.has(id)) {
             this._monitorState =
-                // Use mergeWith here to prevent undefined values from overwriting existing ones.
+                // Use mergeWith here to prevent undefined values from overwriting existing ones
                 this._monitorState.set(id, this._monitorState.get(id).mergeWith((prev, next) => {
                     if (typeof next === 'undefined' || next === null) {
                         return prev;
@@ -3181,7 +2957,7 @@ class Runtime extends EventEmitter {
     /**
      * Hides a monitor and returns success/failure of action.
      * @param {!string} monitorId ID of the monitor to hide.
-     * @return {boolean} true if monitor exists and was updated; false otherwise.
+     * @return {boolean} true if monitor exists and was updated, false otherwise
      */
     requestHideMonitor (monitorId) {
         return this.requestUpdateMonitor(new Map([
@@ -3194,7 +2970,7 @@ class Runtime extends EventEmitter {
      * Shows a monitor and returns success/failure of action.
      * not exist in the state.
      * @param {!string} monitorId ID of the monitor to show.
-     * @return {boolean} true if monitor exists and was updated; false otherwise.
+     * @return {boolean} true if monitor exists and was updated, false otherwise
      */
     requestShowMonitor (monitorId) {
         return this.requestUpdateMonitor(new Map([
@@ -3245,8 +3021,8 @@ class Runtime extends EventEmitter {
 
     /**
      * Get a target by its drawable id.
-     * @param {number} drawableID drawable id of target to find.
-     * @return {?Target} The target, if found.
+     * @param {number} drawableID drawable id of target to find
+     * @return {?Target} The target, if found
      */
     getTargetByDrawableId (drawableID) {
         for (let i = 0; i < this.targets.length; i++) {
@@ -3265,7 +3041,7 @@ class Runtime extends EventEmitter {
 
     /**
      * Return whether there are clones available.
-     * @return {boolean} True until the number of clones hits runtimeOptions.maxClones.
+     * @return {boolean} True until the number of clones hits runtimeOptions.maxClones
      */
     clonesAvailable () {
         return this._cloneCounter < this.runtimeOptions.maxClones;
@@ -3279,7 +3055,7 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Report that the project has changed in a way that would affect serialization.
+     * Report that the project has changed in a way that would affect serialization
      */
     emitProjectChanged () {
         this.emit(Runtime.PROJECT_CHANGED);
@@ -3297,7 +3073,7 @@ class Runtime extends EventEmitter {
 
     /**
      * Report that a clone target is being removed.
-     * @param {Target} target - the target being removed.
+     * @param {Target} target - the target being removed
      * @fires Runtime#targetWasRemoved
      */
     fireTargetWasRemoved (target) {
@@ -3309,13 +3085,9 @@ class Runtime extends EventEmitter {
      * @return {?Target} The target, if found.
      */
     getTargetForStage () {
-
-
         if (this._stageTarget) {
             return this._stageTarget;
         }
-
-
         for (let i = 0; i < this.targets.length; i++) {
             const target = this.targets[i];
             if (target.isStage) {
@@ -3343,12 +3115,12 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * Get the label or label function for an opcode.
-     * @param {string} extendedOpcode - the opcode you want a label for.
-     * @return {object} object with label and category.
-     * @property {string} category - the category for this opcode.
-     * @property {Function} [labelFn] - function to generate the label for this opcode.
-     * @property {string} [label] - the label for this opcode if `labelFn` is absent.
+     * Get the label or label function for an opcode
+     * @param {string} extendedOpcode - the opcode you want a label for
+     * @return {object} - object with label and category
+     * @property {string} category - the category for this opcode
+     * @property {Function} [labelFn] - function to generate the label for this opcode
+     * @property {string} [label] - the label for this opcode if `labelFn` is absent
      */
     getLabelForOpcode (extendedOpcode) {
         const [category, opcode] = StringUtil.splitFirst(extendedOpcode, '_');
@@ -3362,7 +3134,6 @@ class Runtime extends EventEmitter {
 
         // TODO: we may want to format the label in a locale-specific way.
         return {
-            // ??? 'assumes that all extensions have the same monitor color' (what to do exactly with that information)? !!!
             category: 'extension', // This assumes that all extensions have the same monitor color.
             label: `${categoryInfo.name}: ${block.info.text}`
         };
@@ -3424,28 +3195,14 @@ class Runtime extends EventEmitter {
      */
     start () {
         // Do not start if we are already running
-        // if (this._steppingInterval) return;
-
-
         if (this.frameLoop.running) return;
         this.frameLoop.start();
         this.emit(Runtime.RUNTIME_STARTED);
-
-
-        // let interval = Runtime.THREAD_STEP_INTERVAL;
-        // if (this.compatibilityMode) {
-        //     interval = Runtime.THREAD_STEP_INTERVAL_COMPATIBILITY;
-        // }
-        // this.currentStepTime = interval;
-        // this._steppingInterval = setInterval(() => {
-        //     this._step();
-        // }, interval);
-        // this.emit(Runtime.RUNTIME_STARTED);
     }
 
     /**
-     * Stop the tick loop.
-     * Note: It only stops the loop − it will not stop any threads the next time the VM starts.
+     * tw: Stop the tick loop
+     * Note: This only stops the loop. It will not stop any threads the next time the VM starts
      */
     stop () {
         if (!this.frameLoop.running) {
@@ -3454,17 +3211,6 @@ class Runtime extends EventEmitter {
         this.frameLoop.stop();
         this.emit(Runtime.RUNTIME_STOPPED);
     }
-
-
-    // ??? CHANGE ???
-    // /**
-    //  * Quit the Runtime, clearing any handles which might keep the process alive.
-    //  * Do not use the runtime after calling this method. This method is meant for test shutdown.
-    //  */
-    // quit () {
-    //     clearInterval(this._steppingInterval);
-    //     this._steppingInterval = null;
-    // }
 
     /**
      * Turn on profiling.
@@ -3493,7 +3239,6 @@ class Runtime extends EventEmitter {
         this.currentMSecs = Date.now();
     }
 
-
     updatePrivacy () {
         const enforceRestrictions = (
             this.enforcePrivacy &&
@@ -3505,7 +3250,7 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * @param {boolean} enabled - `true` to enable enforcing restrictions to protect user privacy; `false` to disable.
+     * @param {boolean} enabled True if restrictions should be enforced to protect user privacy.
      */
     setEnforcePrivacy (enabled) {
         this.enforcePrivacy = enabled;
@@ -3513,8 +3258,8 @@ class Runtime extends EventEmitter {
     }
 
     /**
-     * @param {string} method - the name of the method for external communication in 'Runtime.externalCommunicationMethods'.
-     * @param {boolean} enabled - `true` to enable external communication; `false` to disable.
+     * @param {string} method Name of the method in Runtime.externalCommunicationMethods
+     * @param {boolean} enabled True if the feature is enabled.
      */
     setExternalCommunicationMethod (method, enabled) {
         if (!Object.prototype.hasOwnProperty.call(this.externalCommunicationMethods, method)) {

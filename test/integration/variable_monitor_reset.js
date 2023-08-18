@@ -35,7 +35,7 @@ test('importing one project after the other resets monitored variables', t => {
             const jamalVarBlock = vm.runtime.monitorBlocks.getBlock(jamalVarId);
             t.notOk(jamalVarBlock);
 
-            vm.quit();
+            // vm.quit();
             t.end();
         });
     });

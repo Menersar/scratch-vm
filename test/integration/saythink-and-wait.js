@@ -29,7 +29,7 @@ test('say/think and wait', t => {
             // The test will fail if the project throws.
             setTimeout(() => {
                 vm.stopAll();
-                vm.quit();
+                // vm.quit();
                 t.end();
             }, 2000);
         });

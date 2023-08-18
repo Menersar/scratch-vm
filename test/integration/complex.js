@@ -19,7 +19,7 @@ test('complex', t => {
     vm.on('playgroundData', e => {
         const threads = JSON.parse(e.threads);
         t.ok(threads.length === 0);
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

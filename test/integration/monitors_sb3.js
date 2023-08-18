@@ -247,7 +247,7 @@ test('importing sb3 project with monitors', t => {
         t.equal(monitorRecord.targetId, null);
         t.equal(vm.extensionManager.isExtensionLoaded('ev3'), true);
 
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

@@ -17,7 +17,7 @@ test('sb2 project (originally from Scratch 1.4) with missing backdrop image shou
     vm.on('playgroundData', e => {
         const threads = JSON.parse(e.threads);
         t.ok(threads.length === 0);
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

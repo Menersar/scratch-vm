@@ -37,7 +37,7 @@ test('Load external extensions', async t => {
     }
 
     stopVideoLoop(vm);
-    vm.quit();
+    // vm.quit();
     t.end();
 });
 
@@ -78,6 +78,6 @@ test('Load video sensing extension and video properties', async t => {
     }
 
     stopVideoLoop(vm);
-    vm.quit();
+    // vm.quit();
     t.end();
 });

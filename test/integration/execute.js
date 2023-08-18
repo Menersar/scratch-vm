@@ -91,7 +91,7 @@ fs.readdirSync(executeDir)
                 },
                 end () {
                     didEnd = true;
-                    vm.quit();
+                    // vm.quit();
                     t.end();
                 }
             };
@@ -143,7 +143,7 @@ fs.readdirSync(executeDir)
                     // it can be resolved.
                     if (!didEnd) {
                         t.fail('did not say "end"');
-                        vm.quit();
+                        // vm.quit();
                         t.end();
                     }
                 });

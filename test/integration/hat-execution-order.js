@@ -20,7 +20,7 @@ test('complex', t => {
         const results = vm.runtime.targets[0].variables[resultKey].value;
         t.deepEqual(results, ['3', '2', '1', 'stage']);
 
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

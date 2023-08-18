@@ -31,7 +31,7 @@ test('importing sb3 project with incorrect list monitor name', t => {
             t.equal(monitorBlock.fields.LIST.value, renamedListName);
         }
 
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

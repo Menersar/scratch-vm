@@ -114,7 +114,7 @@ test('importing sb2 project with special chars in variable names', t => {
         t.equal(bananasVarBlocks.length, 1);
         t.equal(bananasVarBlocks[0].fields.VARIABLE.id, ltPerfectVarId);
 
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

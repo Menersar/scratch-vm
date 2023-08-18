@@ -62,7 +62,7 @@ test('importing sb2 project with special chars in message names', t => {
         t.equal(catMessageBlocks[0].fields.BROADCAST_OPTION.id, ltPerfectMessageId);
         t.equal(catMessageBlocks[1].fields.BROADCAST_OPTION.id, abMessageId);
 
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 

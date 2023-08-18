@@ -33,7 +33,7 @@ test('importing sb2 project where block comment is converted to workspace commen
         const invalidComments = targetComments.filter(comment => typeof comment.blockId === 'number');
         t.equal(invalidComments.length, 0);
 
-        vm.quit();
+        // vm.quit();
         t.end();
     });
 
