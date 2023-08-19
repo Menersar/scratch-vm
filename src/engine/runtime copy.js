@@ -2473,6 +2473,7 @@ class Runtime extends EventEmitter {
      * @param {number} framerate Target frames per second
      */
     setFramerate (framerate) {
+        // !!! Exact reason? ???
         // Setting framerate to anything greater than this is unnecessary and can break the sequencer
         // Additionally, the JS spec says intervals can't run more than once every 4ms (250/s) anyways
         if (framerate > 250) framerate = 250;
