@@ -2,8 +2,10 @@ const formatMessage = require('format-message');
 const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
-const fs = window.require('fs');
-const cp = window.require('child_process');
+// const fs = window.require('fs');
+const fs = require('fs');
+// const cp = window.require('child_process');
+const cp = require('child_process');
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
