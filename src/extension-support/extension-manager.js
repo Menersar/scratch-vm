@@ -34,6 +34,10 @@ const builtinExtensions = {
     // ,
     // pisensehat: () => require('../extensions/scratch3_pisensehat'),
     // pivsgpio: () => require('../extensions/scratch3_pivsgpio')
+    
+    // ,
+    // pisensehat: () => require('../extensions/scratch3_pisensehat'),
+    // pivsgpio: () => require('../extensions/scratch3_pivsgpio')
 };
 
 /**
@@ -577,29 +581,29 @@ class ExtensionManager {
                 if (dispatch._isRemoteService(serviceName)) {
                     return (args, util, realBlockInfo) =>
                         dispatch.call(serviceName, funcName, args, util, realBlockInfo)
-                        .then(result => {
+                            .then(result => {
                             // Scratch is only designed to handle these types.
                             // If any other value comes in such as undefined, null, an object, etc.
                             // we'll convert it to a string to avoid undefined behavior.
-                            if (
-                                typeof result === 'number' ||
+                                if (
+                                    typeof result === 'number' ||
                                 typeof result === 'string' ||
                                 typeof result === 'boolean'
-                            ) {
-                                return result;
-                            }
-                            return `${result}`;
-                        })
+                                ) {
+                                    return result;
+                                }
+                                return `${result}`;
+                            })
                         // When an error happens, instead of returning undefined, we'll return a stringified
                         // version of the error so that it can be debugged.
-                        .catch(err => {
+                            .catch(err => {
                             // !!! ???
                             // We want the full error including stack to be printed but the log helper
                             // messes with that.
                             // eslint-disable-next-line no-console
-                            console.error('Custom extension block error', err);
-                            return `${err}`;
-                        });
+                                console.error('Custom extension block error', err);
+                                return `${err}`;
+                            });
                 }
 
                 // avoid promise latency if we can call direct
