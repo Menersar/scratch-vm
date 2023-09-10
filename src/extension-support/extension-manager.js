@@ -30,9 +30,10 @@ const builtinExtensions = {
     sidekick: () => require('../extensions/sidekick'),
 
     
-    pigpio: () => require('../extensions/scratch3_pigpio'),
-    pisensehat: () => require('../extensions/scratch3_pisensehat'),
-    pivsgpio: () => require('../extensions/scratch3_pivsgpio')
+    pigpio: () => require('../extensions/scratch3_pigpio')
+    // ,
+    // pisensehat: () => require('../extensions/scratch3_pisensehat'),
+    // pivsgpio: () => require('../extensions/scratch3_pivsgpio')
 };
 
 /**
