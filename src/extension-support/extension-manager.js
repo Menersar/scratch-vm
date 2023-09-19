@@ -19,6 +19,7 @@ const builtinExtensions = {
     music: () => require('../extensions/scratch3_music'),
     microbit: () => require('../extensions/scratch3_microbit'),
     text2speech: () => require('../extensions/scratch3_text2speech'),
+    test1: () => require('../extensions/scratch3_test1'),
     translate: () => require('../extensions/scratch3_translate'),
     videoSensing: () => require('../extensions/scratch3_video_sensing'),
     ev3: () => require('../extensions/scratch3_ev3'),
@@ -30,7 +31,7 @@ const builtinExtensions = {
     sidekick: () => require('../extensions/sidekick'),
 
     
-    pigpio: () => require('../extensions/scratch3_pigpio')
+    // pigpio: () => require('../extensions/scratch3_pigpio')
     // ,
     // pisensehat: () => require('../extensions/scratch3_pisensehat'),
     // pivsgpio: () => require('../extensions/scratch3_pivsgpio')
