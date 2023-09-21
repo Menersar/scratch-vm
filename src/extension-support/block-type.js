@@ -14,6 +14,11 @@ const BlockType = {
     BUTTON: 'button',
 
     /**
+     * A text label (not an actual block) for adding comments or labeling blocks.
+     */
+    LABEL: 'label',
+
+    /**
      * Command block
      */
     COMMAND: 'command',
@@ -35,10 +40,10 @@ const BlockType = {
      */
     HAT: 'hat',
 
-    /**
-     * A Text label (not an actual block) for providing labels, like adding comments or labeling blocks
-     */
-    LABEL: 'label',
+    // /**
+    //  * A Text label (not an actual block) for providing labels, like adding comments or labeling blocks
+    //  */
+    // LABEL: 'label',
 
     /**
      * Specialized command block which may or may not run a child branch
@@ -49,7 +54,13 @@ const BlockType = {
     /**
      * General reporter with numeric or string value
      */
-    REPORTER: 'reporter'
+    REPORTER: 'reporter',
+
+    // !!! '**Arbitrary** scratch-blocks XML', etc.(?!)? ???
+    /**
+     * Arbitrary scratch-blocks XML.
+     */
+    XML: 'xml'
 };
 
 module.exports = BlockType;

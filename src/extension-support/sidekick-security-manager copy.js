@@ -1,6 +1,3 @@
-// !!!
-
-// !!! CHANGE ??? !!!
 /* eslint-disable no-unused-vars */
 
 /**
@@ -20,19 +17,13 @@
  *   return confirm("Automatically load extension: " + url);
  * };
  * vm.securityManager.canFetch = (url) => {
- *   // !!! CHANGE !!!
- *   // return url.startsWith('https://mixality.github.io/Sidekick/');
- *   return url.startsWith('https://menersar.github.io/Sidekick/');
+ *   return url.startsWith('https://turbowarp.org/');
  * };
  * vm.securityManager.canOpenWindow = (url) => {
- *   // !!! CHANGE !!!
- *   // return url.startsWith('https://mixality.github.io/Sidekick/');
- *   return url.startsWith('https://menersar.github.io/Sidekick/');
+ *   return url.startsWith('https://turbowarp.org/');
  * };
  * vm.securityManager.canRedirect = (url) => {
- *   // !!! CHANGE !!!
- *   // return url.startsWith('https://mixality.github.io/Sidekick/');
- *   return url.startsWith('https://menersar.github.io/Sidekick/');
+ *   return url.startsWith('https://turbowarp.org/');
  * };
  * ```
  */
@@ -59,7 +50,6 @@ class SecurityManager {
         return Promise.resolve(false);
     }
 
-    // !!! ???
     /**
      * Allows last-minute changing the real URL of the extension that gets loaded.
      * @param {*} extensionURL The URL requested to be loaded.
@@ -154,7 +144,6 @@ class SecurityManager {
         return Promise.resolve(true);
     }
 
-    // !!! ???
     /**
      * Determine whether an extension is allowed to embed content from a given URL.
      * @param {string} documentURL The URL of the embed.

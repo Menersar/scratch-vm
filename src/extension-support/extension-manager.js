@@ -4,12 +4,14 @@ const maybeFormatMessage = require('../util/maybe-format-message');
 
 const BlockType = require('./block-type');
 const SecurityManager = require('./sidekick-security-manager');
-
+        
+// !!! 'TODO'? ???
 // These extensions are currently built into the VM repository but should not be loaded at startup.
 // TODO: move these out into a separate repository?
 // TODO: change extension spec so that library info, including extension ID, can be collected through static methods
 
-const builtinExtensions = {
+// const builtinExtensions = {
+const defaultBuiltinExtensions = {
     // This is an example that isn't loaded with the other core blocks,
     // but serves as a reference for loading core blocks as extensions.
     coreExample: () => require('../blocks/scratch3_core_example'),
@@ -27,8 +29,9 @@ const builtinExtensions = {
     boost: () => require('../extensions/scratch3_boost'),
     gdxfor: () => require('../extensions/scratch3_gdx_for'),
     
-    // This is the core extension.
-    sidekick: () => require('../extensions/sidekick'),
+    // This is the core extension:
+    sidekick: () => require('../extensions/sidekick')
+    // ,
 
     
     // pigpio: () => require('../extensions/scratch3_pigpio')
@@ -114,7 +117,7 @@ class ExtensionManager {
 
         // ??? !!!
         /**
-         * Map of loaded extension URLs/IDs (equivalent for built-in extensions) to service name.
+         * Map of loaded extension URLs/IDs (equivalent for built-in extensions) to service names.
          * @type {Map.<string, string>}
          * @private
          */
@@ -130,6 +133,7 @@ class ExtensionManager {
          */
         this.vm = vm;
 
+        // !!! 'TODO'? ???
         /**
          * Keep a reference to the runtime so we can construct internal extension objects.
          * TODO: remove this in favor of extensions accessing the runtime as a service.
@@ -139,6 +143,8 @@ class ExtensionManager {
 
         this.loadingAsyncExtensions = 0;
         this.asyncExtensionsLoadedCallbacks = [];
+
+        this.builtinExtensions = Object.assign({}, defaultBuiltinExtensions);
 
         dispatch.setService('extensions', createExtensionService(this)).catch(e => {
             log.error(`ExtensionManager was unable to register extension service: ${JSON.stringify(e)}`);
@@ -164,7 +170,8 @@ class ExtensionManager {
      * @returns {boolean}
      */
     isBuiltinExtension (extensionId) {
-        return Object.prototype.hasOwnProperty.call(builtinExtensions, extensionId);
+        // !!! Reason for 'this' in 'this.builtinExtensions', etc.(?!)? ???
+        return Object.prototype.hasOwnProperty.call(this.builtinExtensions, extensionId);
     }
 
     /**
@@ -185,12 +192,17 @@ class ExtensionManager {
             log.warn(message);
             return;
         }
-
-        const extension = builtinExtensions[extensionId]();
+            
+        // !!! Reason for 'this' in 'this.builtinExtensions[extensionId]()', etc.(?!)? ???
+        const extension = this.builtinExtensions[extensionId]();
         const extensionInstance = new extension(this.runtime);
         const serviceName = this._registerInternalExtension(extensionInstance);
         this._loadedExtensions.set(extensionId, serviceName);
         this.runtime.compilerRegisterExtension(extensionId, extensionInstance);
+    }
+
+    addBuiltinExtension (extensionId, extensionClass) {
+        this.builtinExtensions[extensionId] = () => extensionClass;
     }
 
     _isValidExtensionURL (extensionURL) {
@@ -213,6 +225,7 @@ class ExtensionManager {
      * @returns {Promise} resolved once the extension is loaded and initialized or rejected on failure
      */
     async loadExtensionURL (extensionURL) {
+        // // !!! 'dupe', etc.(?!)? ???
         // // ??? !!!
         // /** @TODO dupe handling for non-builtin extensions. See commit 670e51d33580e8a2e852b3b038bb3afc282f81b9 */
         if (this.isBuiltinExtension(extensionURL)) {
@@ -237,11 +250,14 @@ class ExtensionManager {
         this.loadingAsyncExtensions++;
 
         const sandboxMode = await this.securityManager.getSandboxMode(extensionURL);
+        const rewritten = await this.securityManager.rewriteExtensionURL(extensionURL);
 
         if (sandboxMode === 'unsandboxed') {
             // !!! ???
             const {load} = require('./sidekick-unsandboxed-extension-runner');
-            const extensionObjects = await load(extensionURL, this.vm)
+            // const extensionObjects = await load(extensionURL, this.vm)
+            // !!! 'rewritten', etc.(?!)? ???
+            const extensionObjects = await load(rewritten, this.vm)
                 .catch(error => this._failedLoadingExtensionScript(error));
             const fakeWorkerId = this.nextExtensionWorker++;
             this.workerURLs[fakeWorkerId] = extensionURL;
@@ -278,7 +294,8 @@ class ExtensionManager {
         return new Promise((resolve, reject) => {
             // // If we `require` this at the global level it breaks non-webpack targets, including tests
             // const ExtensionWorker = require('worker-loader?name=extension-worker.js!./extension-worker');
-            this.pendingExtensions.push({extensionURL, resolve, reject});
+            // !!! 'rewritten', etc.(?!)? ???
+            this.pendingExtensions.push({extensionURL: rewritten, resolve, reject});
             dispatch.addWorker(new ExtensionWorker());
         }).catch(error => this._failedLoadingExtensionScript(error));
     }
@@ -298,7 +315,6 @@ class ExtensionManager {
             });
         });
     }
-
 
     /**
      * Regenerate blockinfo for any loaded extensions
@@ -348,7 +364,6 @@ class ExtensionManager {
         });
     }
 
-
     _finishedLoadingExtensionScript () {
         this.loadingAsyncExtensions--;
         if (this.loadingAsyncExtensions === 0) {
@@ -367,7 +382,6 @@ class ExtensionManager {
         throw error;
     }
 
-
     /**
      * Called by an extension worker to indicate that the worker has finished initialization.
      * @param {int} id - the worker ID.
@@ -379,6 +393,7 @@ class ExtensionManager {
         if (e) {
             workerInfo.reject(e);
         } else {
+            // !!! ???
             // workerInfo.resolve(id);
             workerInfo.resolve();
         }
@@ -539,6 +554,12 @@ class ExtensionManager {
      * @private
      */
     _prepareBlockInfo (serviceName, blockInfo) {
+        if (blockInfo.blockType === BlockType.XML) {
+            blockInfo = Object.assign({}, blockInfo);
+            blockInfo.xml = String(blockInfo.xml) || '';
+            return blockInfo;
+        }
+
         blockInfo = Object.assign({}, {
             blockType: BlockType.COMMAND,
             terminal: false,
@@ -583,25 +604,25 @@ class ExtensionManager {
                     return (args, util, realBlockInfo) =>
                         dispatch.call(serviceName, funcName, args, util, realBlockInfo)
                             .then(result => {
-                            // Scratch is only designed to handle these types.
-                            // If any other value comes in such as undefined, null, an object, etc.
-                            // we'll convert it to a string to avoid undefined behavior.
+                                // Scratch is only designed to handle these types.
+                                // If any other value comes in such as undefined, null, an object, etc.
+                                // we'll convert it to a string to avoid undefined behavior.
                                 if (
                                     typeof result === 'number' ||
-                                typeof result === 'string' ||
-                                typeof result === 'boolean'
+                                    typeof result === 'string' ||
+                                    typeof result === 'boolean'
                                 ) {
                                     return result;
                                 }
                                 return `${result}`;
                             })
-                        // When an error happens, instead of returning undefined, we'll return a stringified
-                        // version of the error so that it can be debugged.
+                            // When an error happens, instead of returning undefined, we'll return a stringified
+                            // version of the error so that it can be debugged.
                             .catch(err => {
-                            // !!! ???
-                            // We want the full error including stack to be printed but the log helper
-                            // messes with that.
-                            // eslint-disable-next-line no-console
+                                // !!! ???
+                                // We want the full error including stack to be printed but the log helper
+                                // messes with that.
+                                // eslint-disable-next-line no-console
                                 console.error('Custom extension block error', err);
                                 return `${err}`;
                             });
@@ -629,11 +650,11 @@ class ExtensionManager {
         return blockInfo;
     }
 
-
     getExtensionURLs () {
         const extensionURLs = {};
         for (const [extensionId, serviceName] of this._loadedExtensions.entries()) {
-            if (builtinExtensions.hasOwnProperty(extensionId)) {
+            // !!! Reason for 'this' in 'this.builtinExtensions.hasOwnProperty(extensionId)', etc.(?!)? ???
+            if (this.builtinExtensions.hasOwnProperty(extensionId)) {
                 continue;
             }
 
@@ -650,8 +671,6 @@ class ExtensionManager {
     isExtensionURLLoaded (url) {
         return Object.values(this.workerURLs).includes(url);
     }
-
-
 }
 
 module.exports = ExtensionManager;

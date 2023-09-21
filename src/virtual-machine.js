@@ -13,29 +13,35 @@ const centralDispatch = require('./dispatch/central-dispatch');
 const ExtensionManager = require('./extension-support/extension-manager');
 const log = require('./util/log');
 const MathUtil = require('./util/math-util');
+const Runtime = require('./engine/runtime');
+const RenderedTarget = require('./sprites/rendered-target');
+const Sprite = require('./sprites/sprite');
 const StringUtil = require('./util/string-util');
-const newBlockIds = require('./util/new-block-ids');
+// const newBlockIds = require('./util/new-block-ids');
 // !!!!
-const Base64Util = require('./util/base64-util');
+// const Base64Util = require('./util/base64-util');
 
 
 const formatMessage = require('format-message');
 
 // !!!!
-const Sprite = require('./sprites/sprite');
-const RenderedTarget = require('./sprites/rendered-target');
+// const Sprite = require('./sprites/sprite');
+// const RenderedTarget = require('./sprites/rendered-target');
 
 const Variable = require('./engine/variable');
-const Runtime = require('./engine/runtime');
+// const Runtime = require('./engine/runtime');
+const newBlockIds = require('./util/new-block-ids');
 
 const {loadCostume} = require('./import/load-costume.js');
 const {loadSound} = require('./import/load-sound.js');
 const {serializeSounds, serializeCostumes} = require('./serialization/serialize-assets');
 // !!!!
-const {exportCostume} = require('./serialization/sidekick-costume-import-export');
+// const {exportCostume} = require('./serialization/sidekick-costume-import-export');
 
 
 require('canvas-toBlob');
+const {exportCostume} = require('./serialization/sidekick-costume-import-export');
+const Base64Util = require('./util/base64-util');
 
 const RESERVED_NAMES = ['_mouse_', '_stage_', '_edge_', '_myself_', '_random_'];
 
@@ -65,7 +71,6 @@ const createRuntimeService = runtime => {
     return service;
 };
 
-
 /**
  * Handles connections between blocks, stage, and extensions.
  * @constructor
@@ -84,8 +89,6 @@ class VirtualMachine extends EventEmitter {
 
         // !!!!
         centralDispatch.setService('runtime', createRuntimeService(this.runtime)).catch(e => {
-
-
             log.error(`Failed to register runtime service: ${JSON.stringify(e)}`);
         });
 
@@ -190,8 +193,6 @@ class VirtualMachine extends EventEmitter {
         this.runtime.on(Runtime.RUNTIME_STOPPED, () => {
             this.emit(Runtime.RUNTIME_STOPPED);
         });
-
-
         this.runtime.on(Runtime.HAS_CLOUD_DATA_UPDATE, hasCloudData => {
             this.emit(Runtime.HAS_CLOUD_DATA_UPDATE, hasCloudData);
         });
@@ -232,7 +233,6 @@ class VirtualMachine extends EventEmitter {
         this.securityManager = this.extensionManager.securityManager;
         this.runtime.extensionManager = this.extensionManager;
 
-
         // Load core extensions
         for (const id of CORE_EXTENSIONS) {
             this.extensionManager.loadExtensionIdSync(id);
@@ -265,7 +265,7 @@ class VirtualMachine extends EventEmitter {
 
     // !!!!
     /**
-     * Stop running the VM
+     * Stop running the VM.
      * Note: This only stops the loop. It will not stop any threads the next time the VM starts
      */
     stop () {
@@ -365,7 +365,6 @@ class VirtualMachine extends EventEmitter {
     handleExtensionButtonPress (buttonData) {
         this.runtime.handleExtensionButtonPress(buttonData);
     }
-
 
     /**
      * Stop all threads and running activities.
@@ -484,8 +483,6 @@ class VirtualMachine extends EventEmitter {
                 if (error) {
                     return reject(error);
                 }
-
-
                 resolve(res);
             });
         })
@@ -569,8 +566,8 @@ class VirtualMachine extends EventEmitter {
     _saveProjectZip () {
 
 
-        const soundDescs = serializeSounds(this.runtime);
-        const costumeDescs = serializeCostumes(this.runtime);
+        // const soundDescs = serializeSounds(this.runtime);
+        // const costumeDescs = serializeCostumes(this.runtime);
         const projectJson = this.toJSON();
 
         // TODO want to eventually move zip creation out of here, and perhaps
@@ -583,7 +580,8 @@ class VirtualMachine extends EventEmitter {
 
 
         // !!!!
-        this._addFileDescsToZip(costumeDescs.concat(soundDescs), zip);
+        // this._addFileDescsToZip(costumeDescs.concat(soundDescs), zip);
+        this._addFileDescsToZip(this.serializeAssets(), zip);
 
 
         // return zip.generateAsync({
@@ -603,23 +601,22 @@ class VirtualMachine extends EventEmitter {
     saveProjectSb3 (type) {
         return this._saveProjectZip().generateAsync({
             type: type || 'blob',
-
-
             mimeType: 'application/x.scratch.sb3',
             compression: 'DEFLATE'
-
-
-            // !!!!
-            // !!! (Why) not needed anymore? ???
-            // // ??? !!!
-            // ,
-            // compressionOptions: {
-            //     level: 6 // Tradeoff between best speed (1) and best compression (9)
-            // }
-
-
         });
     }
+            
+    // !!!!
+    // !!! (Why) not needed anymore? ???
+    // // ??? !!!
+    // ,
+    // compressionOptions: {
+    //     level: 6 // Tradeoff between best speed (1) and best compression (9)
+    // }
+
+
+    // });
+    // }
 
 
     // !!!!
@@ -643,30 +640,54 @@ class VirtualMachine extends EventEmitter {
      * @returns {Record<string, Uint8Array>} Map of file name to the raw data for that file.
      */
     saveProjectSb3DontZip () {
-        const soundDescs = serializeSounds(this.runtime);
-        const costumeDescs = serializeCostumes(this.runtime);
+        // const soundDescs = serializeSounds(this.runtime);
+        // const costumeDescs = serializeCostumes(this.runtime);
         const projectJson = this.toJSON();
 
         const files = {
             'project.json': new _TextEncoder().encode(projectJson)
         };
-        for (const fileDesc of soundDescs.concat(costumeDescs)) {
+        // for (const fileDesc of soundDescs.concat(costumeDescs)) {
+        for (const fileDesc of this.serializeAssets()) {
             files[fileDesc.fileName] = fileDesc.fileContent;
         }
 
         return files;
     }
 
-
-    /*
-     * @type {Array<object>} Array of all costumes and sounds currently in the runtime
+    /**
+     * @type {Array<object>} Array of all assets (costumes, sounds, fonts, _(?!)) currently in the runtime.
      */
     get assets () {
-        return this.runtime.targets.reduce((acc, target) => (
+        // return this.runtime.targets.reduce((acc, target) => (
+        const costumesAndSounds = this.runtime.targets.reduce((acc, target) => (
             acc
                 .concat(target.sprite.sounds.map(sound => sound.asset))
                 .concat(target.sprite.costumes.map(costume => costume.asset))
         ), []);
+        const fonts = this.runtime.fontManager.serializeAssets();
+        return [
+            ...costumesAndSounds,
+            ...fonts
+        ];
+    }
+
+    /**
+     * @param {string} targetId Optional ID of target to export
+     * @returns {Array<{fileName: string; fileContent: Uint8Array;}} list of file descs
+     */
+    serializeAssets (targetId) {
+        const costumeDescs = serializeCostumes(this.runtime, targetId);
+        const soundDescs = serializeSounds(this.runtime, targetId);
+        const fontDescs = this.runtime.fontManager.serializeAssets().map(asset => ({
+            fileName: `${asset.assetId}.${asset.dataFormat}`,
+            fileContent: asset.data
+        }));
+        return [
+            ...costumeDescs,
+            ...soundDescs,
+            ...fontDescs
+        ];
     }
 
     _addFileDescsToZip (fileDescs, zip) {
@@ -674,9 +695,8 @@ class VirtualMachine extends EventEmitter {
 
         // !!!!
         // !!! ???
+        // !!! 'TODO'? ???
         // TODO: sort files, smallest first
-
-
         for (let i = 0; i < fileDescs.length; i++) {
             const currFileDesc = fileDescs[i];
             zip.file(currFileDesc.fileName, currFileDesc.fileContent);
@@ -696,8 +716,8 @@ class VirtualMachine extends EventEmitter {
      * specified by optZipType or blob by default.
      */
     exportSprite (targetId, optZipType) {
-        const soundDescs = serializeSounds(this.runtime, targetId);
-        const costumeDescs = serializeCostumes(this.runtime, targetId);
+        // const soundDescs = serializeSounds(this.runtime, targetId);
+        // const costumeDescs = serializeCostumes(this.runtime, targetId);
         const spriteJson = this.toJSON(targetId);
 
         const zip = new JSZip();
@@ -706,8 +726,8 @@ class VirtualMachine extends EventEmitter {
 
 
         // !!!!
-        this._addFileDescsToZip(costumeDescs.concat(soundDescs), zip);
-
+        // this._addFileDescsToZip(costumeDescs.concat(soundDescs), zip);
+        this._addFileDescsToZip(this.serializeAssets(targetId), zip);
 
         return zip.generateAsync({
             type: typeof optZipType === 'string' ? optZipType : 'blob',
@@ -719,15 +739,11 @@ class VirtualMachine extends EventEmitter {
         });
     }
 
+    // !!!!
     /**
      * Export project or sprite as a Scratch 3.0 JSON representation.
      * @param {string=} optTargetId - Optional id of a sprite to serialize
-     *
-     *
-    //  * !!!!
      * @param {*} serializationOptions Options to pass to the serializer
-     *
-     *
      * @return {string} Serialized state of the runtime.
      */
     // toJSON (optTargetId) {
@@ -735,16 +751,12 @@ class VirtualMachine extends EventEmitter {
 
     // !!!!
     toJSON (optTargetId, serializationOptions) {
-
-
         const sb3 = require('./serialization/sb3');
         // return StringUtil.stringify(sb3.serialize(this.runtime, optTargetId));
 
 
         // !!!!
         return StringUtil.stringify(sb3.serialize(this.runtime, optTargetId, serializationOptions));
-
-
     }
 
     // TODO do we still need this function? Keeping it here so as not to introduce
@@ -792,8 +804,6 @@ class VirtualMachine extends EventEmitter {
 
                     // !!!!
                     try {
-
-
                         performance.measure('scratch-vm-deserialize',
                             'scratch-vm-deserialize-start', 'scratch-vm-deserialize-end');
 
@@ -806,8 +816,6 @@ class VirtualMachine extends EventEmitter {
                         // very large projects.
                         log.error(e);
                     }
-
-
                 }
                 return this.installTargets(targets, extensions, true);
             });
@@ -845,7 +853,6 @@ class VirtualMachine extends EventEmitter {
         return Promise.all(extensionPromises);
     }
 
-
     /**
      * Install `deserialize` results: zero or more targets after the extensions (if any) used by those targets.
      * @param {Array.<Target>} targets - the targets to be installed
@@ -868,7 +875,6 @@ class VirtualMachine extends EventEmitter {
     async installTargets (targets, extensions, wholeProject) {
         await this.extensionManager.allAsyncExtensionsLoaded();
 
-
         targets = targets.filter(target => !!target);
 
         // return Promise.all(extensionPromises).then(() => {
@@ -876,8 +882,6 @@ class VirtualMachine extends EventEmitter {
 
         // !!!!
         return this._loadExtensions(extensions.extensionIDs, extensions.extensionURLs).then(() => {
-
-
             targets.forEach(target => {
                 this.runtime.addTarget(target);
                 (/** @type RenderedTarget */ target).updateAllDrawableProperties();
@@ -908,7 +912,6 @@ class VirtualMachine extends EventEmitter {
             if (wholeProject) {
                 this.runtime.parseProjectOptions();
             }
-
 
             // Update the VM user's knowledge of targets and blocks on the workspace.
             this.emitTargetsUpdate(false /* Don't emit project change */);
@@ -1249,7 +1252,6 @@ class VirtualMachine extends EventEmitter {
         return Base64Util.uint8ArrayToBase64(binaryData);
     }
 
-
     /**
      * Update a costume with the given bitmap
      * @param {!int} costumeIndex - the index of the costume to be updated.
@@ -1274,8 +1276,6 @@ class VirtualMachine extends EventEmitter {
     }
 
     _updateBitmap (costume, bitmap, rotationCenterX, rotationCenterY, bitmapResolution) {
-
-
         if (!(costume && this.runtime && this.runtime.renderer)) return;
         if (costume && costume.broken) delete costume.broken;
 
@@ -1348,8 +1348,6 @@ class VirtualMachine extends EventEmitter {
     }
 
     _updateSvg (costume, svg, rotationCenterX, rotationCenterY) {
-
-
         if (costume && costume.broken) delete costume.broken;
         if (costume && this.runtime && this.runtime.renderer) {
             costume.rotationCenterX = rotationCenterX;
@@ -1422,8 +1420,6 @@ class VirtualMachine extends EventEmitter {
                 if (oldName === newUnusedName) {
                     return;
                 }
-
-
                 const allTargets = this.runtime.targets;
                 for (let i = 0; i < allTargets.length; i++) {
                     const currTarget = allTargets[i];
@@ -1563,8 +1559,6 @@ class VirtualMachine extends EventEmitter {
 
         // !!!!
         this.emit('LOCALE_CHANGED', locale);
-
-
         return this.extensionManager.refreshBlocks();
     }
 
@@ -1618,12 +1612,14 @@ class VirtualMachine extends EventEmitter {
         }
     }
 
-    /**
-     * Delete all of the flyout blocks.
-     */
-    clearFlyoutBlocks () {
-        this.runtime.flyoutBlocks.deleteAllBlocks();
-    }
+
+    // !!! Why / really not needed anymore? ???
+    // /**
+    //  * Delete all of the flyout blocks.
+    //  */
+    // clearFlyoutBlocks () {
+    //     this.runtime.flyoutBlocks.deleteAllBlocks();
+    // }
 
     /**
      * Set an editing target. An editor UI can use this function to switch
@@ -1660,7 +1656,6 @@ class VirtualMachine extends EventEmitter {
         return serialized;
     }
 
-
     /**
      * Called when blocks are dragged from one sprite to another. Adds the blocks to the
      * workspace of the given target.
@@ -1678,8 +1673,6 @@ class VirtualMachine extends EventEmitter {
 
         // !!!!
         const {blocks: copiedBlocks, extensionURLs} = sb3.deserializeStandaloneBlocks(blocks);
-
-
         newBlockIds(copiedBlocks);
         const target = this.runtime.getTargetById(targetId);
 
@@ -1707,8 +1700,6 @@ class VirtualMachine extends EventEmitter {
 
         // !!!!
         return this._loadExtensions(extensionIDs, extensionURLs).then(() => {
-
-
             copiedBlocks.forEach(block => {
                 target.blocks.createBlock(block);
             });
@@ -1795,8 +1786,6 @@ class VirtualMachine extends EventEmitter {
             }
             return lazyTargetList;
         };
-
-
         this.emit('targetsUpdate', {
             // ??? !!!
             // [[target id, human readable target name], ...].

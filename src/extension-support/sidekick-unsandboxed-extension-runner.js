@@ -1,4 +1,5 @@
 const ScratchCommon = require('./sidekick-extension-api-common');
+const createScratchX = require('./sidekick-scratchx-compatibility-layer');
 const AsyncLimiter = require('../util/async-limiter');
 const createTranslate = require('./sidekick-l10n');
 
@@ -84,15 +85,19 @@ const setupUnsandboxedExtensionAPI = vm => new Promise(resolve => {
 
     Scratch.canGeolocate = async () => vm.securityManager.canGeolocate();
 
+    Scratch.canEmbed = async url => vm.securityManager.canEmbed(url);
+
     Scratch.fetch = async (url, options) => {
         const actualURL = url instanceof Request ? url.url : url;
         if (!await Scratch.canFetch(actualURL)) {
             throw new Error(`Permission to fetch ${actualURL} rejected.`);
         }
-        return fetch(url, {
-            ...options,
-            redirect: 'error'
-        });
+        return fetch(url, options);
+        // return fetch(url, {
+        //     // ??? '...'? !!!
+        //     ...options,
+        //     redirect: 'error'
+        // });
     };
 
     Scratch.openWindow = async (url, features) => {
@@ -115,7 +120,8 @@ const setupUnsandboxedExtensionAPI = vm => new Promise(resolve => {
     Scratch.translate = createTranslate(vm);
 
     global.Scratch = Scratch;
-    global.ScratchExtensions = require('./sidekick-scratchx-compatibility-layer');
+    // global.ScratchExtensions = require('./sidekick-scratchx-compatibility-layer');
+    global.ScratchExtensions = createScratchX(Scratch);
 });
 
 /**

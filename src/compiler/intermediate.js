@@ -70,6 +70,12 @@ class IntermediateScript {
          * @type {Function|null}
          */
         this.cachedCompileResult = null;
+
+        /**
+         * Whether the top block of this script is an executable hat.
+         * @type {boolean}
+         */
+        this.executableHat = false;
     }
 }
 

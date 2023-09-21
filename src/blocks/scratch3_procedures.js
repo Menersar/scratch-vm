@@ -27,17 +27,19 @@ class Scratch3ProcedureBlocks {
     }
 
     call (args, util) {
-
         const stackFrame = util.stackFrame;
         const isReporter = !!args.mutation.return;
 
         if (stackFrame.executed) {
             if (isReporter) {
                 const returnValue = stackFrame.returnValue;
-                // Clean stackframe here since other reporters in this block will use it as well again (note: 'reset()' would do it too rigorous).
+                // Clean 'stackFrame' here since other reporters in this block will use it as well again.
+                // (Note: 'reset()' would do a too rigorous reset).
                 const threadStackFrame = util.thread.peekStackFrame();
                 threadStackFrame.params = null;
-                threadStackFrame.executionContext = null;
+                // threadStackFrame.executionContext = null;
+                delete stackFrame.returnValue;
+                delete stackFrame.executed;
                 return returnValue;
             }
             return;

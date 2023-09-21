@@ -54,34 +54,47 @@ const handleReport = function (resolvedValue, sequencer, thread, blockCached, la
     const currentBlockId = blockCached.id;
     const opcode = blockCached.opcode;
     const isHat = blockCached._isHat;
+    const isConditional = blockCached._isConditional;
+    const isLoop = blockCached._isLoop;
 
     thread.pushReportedValue(resolvedValue);
     if (isHat) {
         // Hat predicate was evaluated.
-        if (sequencer.runtime.getIsEdgeActivatedHat(opcode)) {
+        if (thread.stackClick) {
+            thread.status = Thread.STATUS_RUNNING;
+        } else if (sequencer.runtime.getIsEdgeActivatedHat(opcode)) {
             // If this is an edge-activated hat, only proceed if the value is
             // true and used to be false, or the stack was activated explicitly
             // via stack click
-            if (!thread.stackClick) {
-                const hasOldEdgeValue = thread.target.hasEdgeActivatedValue(currentBlockId);
-                const oldEdgeValue = thread.target.updateEdgeActivatedValue(
-                    currentBlockId,
-                    resolvedValue
-                );
+            // if (!thread.stackClick) {
+            const hasOldEdgeValue = thread.target.hasEdgeActivatedValue(currentBlockId);
+            const oldEdgeValue = thread.target.updateEdgeActivatedValue(
+                currentBlockId,
+                resolvedValue
+            );
 
-                const edgeWasActivated = hasOldEdgeValue ? (!oldEdgeValue && resolvedValue) : resolvedValue;
-                if (edgeWasActivated) {
-                    // Resume thread if (as when paused for a promise).
-                    thread.status = Thread.STATUS_RUNNING;
-                } else {
-                    sequencer.retireThread(thread);
-                }
+            const edgeWasActivated = hasOldEdgeValue ? (!oldEdgeValue && resolvedValue) : resolvedValue;
+            if (edgeWasActivated) {
+                // !!! Keep the following line of code, meaning, reason, etc.(?)? ???
+                // // Resume thread if (as when paused for a promise).
+                thread.status = Thread.STATUS_RUNNING;
+            } else {
+                sequencer.retireThread(thread);
             }
-        } else if (!resolvedValue) {
-            // Not an edge-activated hat: retire the thread
-            // if predicate was false.
+            // }
+        } else if (resolvedValue) {
+            // !!! Keep the following line of code, meaning, reason, etc.(?)? ???
+            // // Not an edge-activated hat: retire the thread
+            // If 'Predicate' returned `true`:
+            // Let script run.
+            thread.status = Thread.STATUS_RUNNING;
+        } else {
+            // If 'predicate' returned `false`:
+            // Do not let script run.
             sequencer.retireThread(thread);
         }
+    } else if ((isConditional || isLoop) && typeof resolvedValue !== 'undefined') {
+        sequencer.stepToBranch(thread, cast.toNumber(resolvedValue), isLoop);
     } else {
         // In a non-hat, report the value visually if necessary if
         // at the top of the thread stack.
@@ -118,12 +131,14 @@ const handlePromise = (primitiveReportedValue, sequencer, thread, blockCached, l
         // ??? !!!
         // If it's a command block or a top level reporter in a stackClick.
         // !!! ???
-        // Only if cached block is not a hat block check clear the stack to check for loops (since it is the top and first block of the script).
-        if (lastOperation && !blockCached._isHat) {
+        // Only if cached block is not a hat block:
+        // Check clear the stack to check for loops, since:
+        // There can't be any loops at the top and first block of the script (i.e. the hat block).
+        if (lastOperation && (!blockCached._isHat || thread.stackClick)) {
             let stackFrame;
             let nextBlockId;
             do {
-                // In the case that the promise is the last block in the current thread stack
+                // In the case that the promise is the last block in the current thread stack:
                 // We need to pop out repeatedly until we find the next block.
                 const popped = thread.popStack();
                 if (popped === null) {
@@ -291,6 +306,11 @@ class BlockCached {
         this._isHat = runtime.getIsHat(opcode);
         this._blockFunction = runtime.getOpcodeFunction(opcode);
         this._definedBlockFunction = typeof this._blockFunction !== 'undefined';
+
+        // !!! Reason, meaning, explanation, etc.(?!) of following three lines of code? ???
+        const flowing = runtime._flowing[opcode];
+        this._isConditional = !!(flowing && flowing.conditional);
+        this._isLoop = !!(flowing && flowing.loop);
 
         // Store the current shadow value if there is a shadow value.
         const fieldKeys = Object.keys(fields);
@@ -521,10 +541,12 @@ const execute = function (sequencer, thread) {
         const primitiveReportedValue = blockFunction(argValues, blockUtility);
 
         const primitiveIsPromise = isPromise(primitiveReportedValue);
-        // If it's a promise or if 'currentStackFrame.waitingReporter':
+        // !!! Keep the following line of code, meaning, reason, etc.(?)? ???
+        // // If it's a promise or if 'currentStackFrame.waitingReporter':
         if (primitiveIsPromise || currentStackFrame.waitingReporter) {
             if (primitiveIsPromise) {
-                // Wait until promise resolves.
+                // !!! Keep the following line of code, meaning, reason, etc.(?)? ???
+                // // Wait until promise resolves.
                 handlePromise(primitiveReportedValue, sequencer, thread, opCached, lastOperation);
             }
 
@@ -553,8 +575,9 @@ const execute = function (sequencer, thread) {
             // // ??? !!!
             // //We are waiting for a promise. Stop running this set of operations
             // !!! ???
-            // We are waiting for it to be resumed later. Stop running this set of operations
-            // and continue them later after thawing the reported values.
+            // We are waiting for it to be resumed later.
+            // Stop running this set of operations and:
+            // Continue them later after thawing the reported values.
             break;
         } else if (thread.status === Thread.STATUS_RUNNING) {
             if (lastOperation) {

@@ -5,8 +5,8 @@
  */
 
 // const vmPackage = require('../../package.json');
-const Sprite = require('../sprites/sprite');
 const Blocks = require('../engine/blocks');
+const Sprite = require('../sprites/sprite');
 const Variable = require('../engine/variable');
 const Comment = require('../engine/comment');
 const MonitorRecord = require('../engine/monitor-record');
@@ -16,11 +16,11 @@ const uid = require('../util/uid');
 const MathUtil = require('../util/math-util');
 const StringUtil = require('../util/string-util');
 const VariableUtil = require('../util/variable-util');
+const compress = require('./sidekick-compress-sb3');
 
 const {loadCostume} = require('../import/load-costume.js');
 const {loadSound} = require('../import/load-sound.js');
 const {deserializeCostume, deserializeSound} = require('./deserialize-assets.js');
-const compress = require('./sidekick-compress-sb3');
 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -199,6 +199,7 @@ const serializeBlock = function (block) {
     const obj = Object.create(null);
     obj.opcode = block.opcode;
     // ??? 'serialize'? !!!
+    // !!! 'NOTE'? ???
     // NOTE: this is extremely important to serialize even if null;
     // not serializing `next: null` results in strange behavior with block
     // execution.
@@ -294,15 +295,15 @@ const getExtensionIdForOpcode = function (opcode) {
     }
 };
 
-
 /**
  * @param {Set<string>|string[]} extensionIDs - Project extension IDs.
  * @param {Runtime} runtime - Runtime instance.
- * @returns {Record<string, string>|null} map of extension ID to URL; null if no custom extensions.
+ * @returns {Record<string, string>|null} map of extension ID to URL; `null` if no custom extensions.
  */
 // !!! ???
 // Pass information about which URLs correspond to which IDs to the VM (useful during project loading).
-// (When converting an extension to a built-in one or when it is already loaded, the script does not need to be re-fetched.)
+// (When converting an extension to a built-in one or when it is already loaded:
+// The script does not need to be re-fetched.)
 // Format of saved extensions:
 // {
 //   "extensionID1": "https://…",
@@ -330,7 +331,6 @@ const getExtensionURLsToSave = (extensionIDs, runtime) => {
     }
     return toSave;
 };
-
 
 /**
  * Serialize the given blocks object (representing all the blocks for the target
@@ -434,7 +434,6 @@ const serializeStandaloneBlocks = (blocks, runtime) => {
     return blocks;
 };
 
-
 /**
  * Serialize the given costume.
  * @param {object} costume The costume to be serialized.
@@ -448,16 +447,16 @@ const serializeCostume = function (costume) {
 
     obj.bitmapResolution = costumeToSerialize.bitmapResolution;
     obj.dataFormat = costumeToSerialize.dataFormat.toLowerCase();
-
+    
     obj.assetId = costumeToSerialize.assetId;
-
+    
     // serialize this property with the name 'md5ext' because that's
     // what it's actually referring to. TODO runtime objects need to be
     // updated to actually refer to this as 'md5ext' instead of 'md5'
     // but that change should be made carefully since it is very
     // pervasive
     obj.md5ext = costumeToSerialize.md5;
-
+    
     obj.rotationCenterX = costumeToSerialize.rotationCenterX;
     obj.rotationCenterY = costumeToSerialize.rotationCenterY;
 
@@ -472,7 +471,7 @@ const serializeCostume = function (costume) {
 const serializeSound = function (sound) {
     const obj = Object.create(null);
     obj.name = sound.name;
-
+    
     const soundToSerialize = sound.broken || sound;
 
     obj.assetId = soundToSerialize.assetId;
@@ -523,7 +522,6 @@ const makeSafeForJSON = value => {
     return `${value}`;
 };
 
-
 /**
  * Serialize the given variables object.
  * @param {object} variables The variables to be serialized.
@@ -550,8 +548,6 @@ const serializeVariables = function (variables) {
 
             // !!! 'makeSafeForJSON'? ???
             obj.lists[varId] = [v.name, makeSafeForJSON(v.value)];
-
-
             continue;
         }
 
@@ -561,8 +557,6 @@ const serializeVariables = function (variables) {
 
         // !!! 'makeSafeForJSON'? ???
         obj.variables[varId] = [v.name, makeSafeForJSON(v.value)];
-
-
         // only scalar vars have the potential to be cloud vars
         if (v.isCloud) obj.variables[varId].push(true);
     }
@@ -717,7 +711,6 @@ const serializeMonitors = function (monitors, runtime, extensions) {
         .toArray();
 };
 
-
 /**
  * Serializes the specified VM runtime.
  * @param {!Runtime} runtime VM runtime instance to be serialized.
@@ -728,8 +721,6 @@ const serializeMonitors = function (monitors, runtime, extensions) {
 
 
 const serialize = function (runtime, targetId, {allowOptimization = true} = {}) {
-
-
     // Fetch targets
     const obj = Object.create(null);
     // Create extension set to hold extension ids found while serializing targets
@@ -752,6 +743,7 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
     }
 
     const serializedTargets = flattenedOriginalTargets.map(t => serializeTarget(t, extensions));
+    const fonts = runtime.fontManager.serializeJSON();
 
     if (targetId) {
 
@@ -766,8 +758,9 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
         if (extensionURLs) {
             target.extensionURLs = extensionURLs;
         }
-
-
+        if (fonts) {
+            target.customFonts = fonts;
+        }
         return serializedTargets[0];
     }
 
@@ -789,6 +782,9 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
         obj.extensionURLs = extensionURLs;
     }
 
+    if (fonts) {
+        obj.customFonts = fonts;
+    }
 
     // Assemble metadata
     const meta = Object.create(null);
@@ -799,8 +795,6 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
     // !!!!
     // There isn't a good reason to put the full version number in the json, so we don't.
     meta.vm = '0.2.0';
-
-
     if (runtime.origin) {
         meta.origin = runtime.origin;
     }
@@ -810,9 +804,8 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
 
     // !!!!
     meta.agent = '';
-    // Never include full user agent to slightly improve user privacy
+    // Don't include full user agent for slight user privacy improvement.
     // if (typeof navigator !== 'undefined') meta.agent = navigator.userAgent;
-
 
     // Assemble payload and return
     obj.meta = meta;
@@ -822,7 +815,6 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
     if (allowOptimization) {
         compress(obj);
     }
-
 
     return obj;
 };
@@ -1352,7 +1344,6 @@ const deserializeMonitor = function (monitorData, runtime, targets, extensions) 
     monitorData.x = MathUtil.clamp(monitorData.x, 0, runtime.stageWidth);
     monitorData.y = MathUtil.clamp(monitorData.y, 0, runtime.stageHeight);
 
-
     // If the serialized monitor has spriteName defined, look up the sprite
     // by name in the given list of targets and update the monitor's targetId
     // to match the sprite's id.
@@ -1519,6 +1510,13 @@ const deserialize = function (json, runtime, zip, isSingleSprite) {
         }
     }
 
+    // Extract any custom fonts before loading costumes.
+    let fontPromise;
+    if (json.customFonts) {
+        fontPromise = runtime.fontManager.deserialize(json.customFonts, zip, isSingleSprite);
+    } else {
+        fontPromise = Promise.resolve();
+    }
 
     // First keep track of the current target order in the json,
     // then sort by the layer order property before parsing the targets
@@ -1530,10 +1528,12 @@ const deserialize = function (json, runtime, zip, isSingleSprite) {
 
     const monitorObjects = json.monitors || [];
 
-    return Promise.resolve(
-        targetObjects.map(target =>
-            parseScratchAssets(target, runtime, zip))
-    )
+    // return Promise.resolve(
+    //     targetObjects.map(target =>
+    //         parseScratchAssets(target, runtime, zip))
+    // )
+
+    return fontPromise.then(() => targetObjects.map(target => parseScratchAssets(target, runtime, zip)))
         // Force this promise to wait for the next loop in the js tick. Let
         // storage have some time to send off asset requests.
         .then(assets => Promise.resolve(assets))
@@ -1571,11 +1571,7 @@ module.exports = {
     deserialize: deserialize,
     deserializeBlocks: deserializeBlocks,
     serializeBlocks: serializeBlocks,
-
-
     deserializeStandaloneBlocks: deserializeStandaloneBlocks,
     serializeStandaloneBlocks: serializeStandaloneBlocks,
-
-
     getExtensionIdForOpcode: getExtensionIdForOpcode
 };

@@ -190,7 +190,7 @@ class ScriptTreeGenerator {
                 // Legacy support
                 if (name.toLowerCase() === 'last key pressed') {
                     return {
-                        kind: 'gui.lastKeyPressed'
+                        kind: 'sidekick.lastKeyPressed'
                     };
                 }
             }
@@ -645,7 +645,7 @@ class ScriptTreeGenerator {
 
         case 'sidekick_getLastKeyPressed':
             return {
-                kind: 'gui.lastKeyPressed'
+                kind: 'sidekick.lastKeyPressed'
             };
 
         default: {
@@ -1119,7 +1119,7 @@ class ScriptTreeGenerator {
             }
             if (procedureCode === 'sidekick:debugger;') {
                 return {
-                    kind: 'gui.debugger'
+                    kind: 'sidekick.debugger'
                 };
             }
             return this.descendProcedure(block);
@@ -1146,7 +1146,7 @@ class ScriptTreeGenerator {
                 const blockInfo = this.getBlockInfo(block.opcode);
                 if (blockInfo) {
                     const type = blockInfo.info.blockType;
-                    if (type === BlockType.COMMAND) {
+                    if (type === BlockType.COMMAND || type === BlockType.CONDITIONAL || type === BlockType.LOOP) {
                         return this.descendCompatLayer(block);
                     }
                 }
@@ -1387,19 +1387,40 @@ class ScriptTreeGenerator {
      */
     descendCompatLayer (block) {
         this.script.yields = true;
+
         const inputs = {};
-        const fields = {};
+        // const fields = {};
         for (const name of Object.keys(block.inputs)) {
-            inputs[name] = this.descendInputOfBlock(block, name);
+            if (!name.startsWith('SUBSTACK')) {
+                inputs[name] = this.descendInputOfBlock(block, name);
+            }
+            // inputs[name] = this.descendInputOfBlock(block, name);
         }
+
+        const fields = {};
         for (const name of Object.keys(block.fields)) {
             fields[name] = block.fields[name].value;
         }
+
+        const blockInfo = this.getBlockInfo(block.opcode);
+        const blockType = (blockInfo && blockInfo.info && blockInfo.info.blockType) || BlockType.COMMAND;
+        const substacks = [];
+        if (blockType === BlockType.CONDITIONAL || blockType === BlockType.LOOP) {
+            const branchCount = blockInfo.info.branchCount;
+            for (let i = 0; i < branchCount; i++) {
+                const inputName = i === 0 ? 'SUBSTACK' : `SUBSTACK${i + 1}`;
+                substacks.push(this.descendSubstack(block, inputName));
+            }
+        }
+
         return {
             kind: 'compat',
+            id: block.id,
             opcode: block.opcode,
+            blockType,
             inputs,
-            fields
+            fields,
+            substacks
         };
     }
 
@@ -1462,6 +1483,58 @@ class ScriptTreeGenerator {
     }
 
     /**
+     * @param {Block} hatBlock
+     */
+    walkHat (hatBlock) {
+        const nextBlock = hatBlock.next;
+        const opcode = hatBlock.opcode;
+        const hatInfo = this.runtime._hats[opcode];
+
+        if (this.thread.stackClick) {
+            // We still need to treat the hat as a normal block (so executableHat should be false) for
+            // interpreter parity, but the reuslt is ignored.
+            const opcodeFunction = this.runtime.getOpcodeFunction(opcode);
+            if (opcodeFunction) {
+                return [
+                    this.descendCompatLayer(hatBlock),
+                    ...this.walkStack(nextBlock)
+                ];
+            }
+            return this.walkStack(nextBlock);
+        }
+
+        if (hatInfo.edgeActivated) {
+            // Edge-activated HAT
+            this.script.yields = true;
+            this.script.executableHat = true;
+            return [
+                {
+                    kind: 'hat.edge',
+                    id: hatBlock.id,
+                    condition: this.descendCompatLayer(hatBlock)
+                },
+                ...this.walkStack(nextBlock)
+            ];
+        }
+
+        const opcodeFunction = this.runtime.getOpcodeFunction(opcode);
+        if (opcodeFunction) {
+            // Predicate-based HAT
+            this.script.yields = true;
+            this.script.executableHat = true;
+            return [
+                {
+                    kind: 'hat.predicate',
+                    condition: this.descendCompatLayer(hatBlock)
+                },
+                ...this.walkStack(nextBlock)
+            ];
+        }
+
+        return this.walkStack(nextBlock);
+    }
+
+    /**
      * @param {string} topBlockId The ID of the top block of the script.
      * @returns {IntermediateScript}
      */
@@ -1483,23 +1556,43 @@ class ScriptTreeGenerator {
             this.readTopBlockComment(topBlock.comment);
         }
 
-        // If the top block is a hat, advance to its child.
-        let entryBlock;
-        if (this.runtime.getIsHat(topBlock.opcode) || topBlock.opcode === 'procedures_definition') {
-            if (this.runtime.getIsEdgeActivatedHat(topBlock.opcode)) {
-                throw new Error(`Not compiling an edge-activated hat: ${topBlock.opcode}`);
-            }
-            entryBlock = topBlock.next;
+        // We do need to evaluate empty hats
+        const hatInfo = this.runtime._hats[topBlock.opcode];
+        const isHat = !!hatInfo;
+        if (isHat) {
+            this.script.stack = this.walkHat(topBlock);
         } else {
-            entryBlock = topBlockId;
+            // We don't evaluate the procedures_definition top block as it never does anything
+            // We also don't want it to be treated like a hat block
+            let entryBlock;
+            if (topBlock.opcode === 'procedures_definition') {
+                entryBlock = topBlock.next;
+            } else {
+                entryBlock = topBlockId;
+            }
+    
+            if (entryBlock) {
+                this.script.stack = this.walkStack(entryBlock);
+            }
         }
 
-        if (!entryBlock) {
-            // This is an empty script.
-            return this.script;
-        }
+        // // If the top block is a hat, advance to its child.
+        // let entryBlock;
+        // if (this.runtime.getIsHat(topBlock.opcode) || topBlock.opcode === 'procedures_definition') {
+        //     if (this.runtime.getIsEdgeActivatedHat(topBlock.opcode)) {
+        //         throw new Error(`Not compiling an edge-activated hat: ${topBlock.opcode}`);
+        //     }
+        //     entryBlock = topBlock.next;
+        // } else {
+        //     entryBlock = topBlockId;
+        // }
 
-        this.script.stack = this.walkStack(entryBlock);
+        // if (!entryBlock) {
+        //     // This is an empty script.
+        //     return this.script;
+        // }
+
+        // this.script.stack = this.walkStack(entryBlock);
 
         return this.script;
     }

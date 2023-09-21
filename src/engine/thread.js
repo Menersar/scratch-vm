@@ -1,6 +1,5 @@
 const log = require('../util/log');
 
-
 /**
  * Recycle bin for empty stackFrame objects
  * @type Array<_StackFrame>
@@ -24,8 +23,8 @@ class _StackFrame {
 
         // ??? !!!
         /**
-         * Whether this level is in warp mode. Is set by some legacy blocks and
-         * "turbo mode"
+         * Whether this level is in warp mode.
+         * Is set by some legacy blocks and "turbo mode".
          * @type {boolean}
          */
         this.warpMode = warpMode;
@@ -70,7 +69,7 @@ class _StackFrame {
         // !!! ???
         /**
          * Internal block object being executed.
-         * Note: It is **not** the same object as found in target.blocks.
+         * Note: **Not** the same object as found in `target.blocks`.
          * @type {object}
          */
         this.op = null;
@@ -90,10 +89,7 @@ class _StackFrame {
         this.waitingReporter = null;
         this.params = null;
         this.executionContext = null;
-
-
         this.op = null;
-
 
         return this;
     }
@@ -205,7 +201,6 @@ class Thread {
 
         this.justReported = null;
 
-
         this.triedToCompile = false;
 
         this.isCompiled = false;
@@ -222,6 +217,7 @@ class Thread {
          * @type {Object.<string, import('../compiler/compile').CompiledScript>}
          */
         this.procedures = null;
+        this.executableHat = false;
     }
 
     /**
@@ -274,7 +270,6 @@ class Thread {
         return 4;
     }
 
-
     /**
      * @param {Target} target - the target running the thread.
      * @param {string} topBlock - the ID of the thread's top block.
@@ -288,7 +283,6 @@ class Thread {
     getId () {
         return Thread.getIdFromTargetAndBlock(this.target, this.topBlock);
     }
-
 
     /**
      * Push stack and update stack frames appropriately.
@@ -421,12 +415,12 @@ class Thread {
     }
 
 
+    // _!!!!_
     // !!! CHANGE name 'getAllparams' to 'getAllParams' !!!
     getAllparams () {
         const stackFrame = this.peekStackFrame();
         return stackFrame.params;
     }
-
 
     /**
      * Whether the current execution of a thread is at the top of the stack.
@@ -460,16 +454,12 @@ class Thread {
 
         // !!! ???
         const sp = this.stackFrames.length - 1;
-
-
         for (let i = sp - 1; i >= 0; i--) {
             // const block = this.target.blocks.getBlock(this.stack[i]);
 
 
             // !!! ???
             const block = this.target.blocks.getBlock(this.stackFrames[i].op.id);
-
-
             if (block.opcode === 'procedures_call' &&
                 block.mutation.proccode === procedureCode) {
                 return true;
@@ -479,7 +469,6 @@ class Thread {
         return false;
     }
 
-
     /**
      * Attempt to compile this thread.
      */
@@ -488,19 +477,24 @@ class Thread {
             return;
         }
 
-        // !!! ???
-        // Import the compiler here to avoid circular dependency issues.
+        // !!! 'circular dependency issues', etc.? ???
+        // Compiler import here (avoid circular dependency issues).
         const compile = require('../compiler/compile');
 
         this.triedToCompile = true;
 
+        // `stackClick === true` disables hat block generation.
+        // Better: Cache these separately.
+        // For now: Easier to simply disable them (avoid cached versions of scripts breaking projects).
+        const canCache = !this.stackClick;
+
         const topBlock = this.topBlock;
         // Flyout blocks are stored in an extra block container.
         const blocks = this.blockContainer.getBlock(topBlock) ? this.blockContainer : this.target.runtime.flyoutBlocks;
-        const cachedResult = blocks.getCachedCompileResult(topBlock);
+        const cachedResult = canCache && blocks.getCachedCompileResult(topBlock);
         // If a cached error is found: .
         if (cachedResult && !cachedResult.success) {
-            // No attempt to recompile.
+            // No recompiling attempt.
             return;
         }
 
@@ -510,10 +504,14 @@ class Thread {
         } else {
             try {
                 result = compile(this);
-                blocks.cacheCompileResult(topBlock, result);
+                if (canCache) {
+                    blocks.cacheCompileResult(topBlock, result);
+                }
             } catch (error) {
                 log.error('cannot compile script', this.target.getName(), error);
-                blocks.cacheCompileError(topBlock, error);
+                if (canCache) {
+                    blocks.cacheCompileError(topBlock, error);
+                }
                 this.target.runtime.emitCompileError(this.target, error);
                 return;
             }
@@ -526,6 +524,8 @@ class Thread {
 
         this.generator = result.startingFunction(this)();
 
+        this.executableHat = result.executableHat;
+
         if (!this.blockContainer.forceNoGlow) {
             this.blockGlowInFrame = this.topBlock;
             this.requestScriptGlowInFrame = true;
@@ -533,8 +533,6 @@ class Thread {
 
         this.isCompiled = true;
     }
-
-
 }
 
 module.exports = Thread;
