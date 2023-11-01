@@ -30,11 +30,10 @@ const defaultBuiltinExtensions = {
     gdxfor: () => require('../extensions/scratch3_gdx_for'),
     
     // This is the core extension:
-    sidekick: () => require('../extensions/sidekick')
-    // ,
+    sidekick: () => require('../extensions/sidekick'),
 
     
-    // pigpio: () => require('../extensions/scratch3_pigpio')
+    pigpio: () => require('../extensions/scratch3_pigpio')
     // ,
     // pisensehat: () => require('../extensions/scratch3_pisensehat'),
     // pivsgpio: () => require('../extensions/scratch3_pivsgpio')
