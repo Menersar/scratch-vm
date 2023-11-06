@@ -21,4 +21,4 @@ npm-*
 # Localization
 /translations
 
-.history
+/.history
