@@ -21,6 +21,7 @@ const base = {
             loader: 'babel-loader',
             include: path.resolve(__dirname, 'src'),
             query: {
+                // eslint-disable-next-line max-len
                 // presets: [['@babel/preset-env', {targets: {browsers: ['last 3 versions', 'Safari >= 8', 'iOS >= 8']}}]]
                 presets: [['@babel/preset-env']]
             }
@@ -31,15 +32,24 @@ const base = {
             options: {
                 outputPath: 'media/music/'
             }
-        },
-        {
-            test: /\.node$/,
-            loader: 'node-loader'
+        }
+        // ,
+        // {
+        //     test: /\.node$/,
+        //     loader: 'node-loader'
+        // }
+        // ,
+        // {
+        //     test: /\.node$/,
+        //     loader: 'node-loader'
+            //     // config.module.rule('node').test(/\.node$/).use('node-loader').loader('node-loader').end()
 
-            // config.module.rule('node').test(/\.node$/).use('node-loader').loader('node-loader').end()
-
-        }]
+        // }
+        ]
     },
+    // node: {
+    //     __dirname: false
+    // },
     // optimization: {
     //     minimizer: [
     //         new UglifyJsPlugin({
@@ -74,6 +84,17 @@ module.exports = [
     // Node-compatible
     defaultsDeep({}, base, {
         target: 'node',
+        // node: {
+        //     __dirname: false
+        // },
+        // module: {
+        //     rules: [
+        //         {
+        //             test: /\.node$/,
+        //             loader: 'node-loader'
+        //         }
+        //     ]
+        // },
         entry: {
             'scratch-vm': './src/index.js'
         },
