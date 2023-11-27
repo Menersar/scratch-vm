@@ -10,7 +10,9 @@ const Cast = require('../../util/cast');
 // const path = window.require('path');
 
 // const gpio = window.require(path.join(process.resourcesPath + "/static", 'gpiolib.node'));
-const gpio = window.require('../../util/gpiolib.node');
+
+const gpio = window.require('../../static/gpiolib.node');
+// const gpio = window.require('../../util/gpiolib.node');
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
  * @type {string}
