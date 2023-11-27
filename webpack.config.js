@@ -31,6 +31,13 @@ const base = {
             options: {
                 outputPath: 'media/music/'
             }
+        },
+        {
+            test: /\.node$/,
+            loader: 'node-loader'
+
+            // config.module.rule('node').test(/\.node$/).use('node-loader').loader('node-loader').end()
+
         }]
     },
     // optimization: {
