@@ -89,6 +89,7 @@
     "jsdoc": "3.6.6",
     "json": "^9.0.4",
     "lodash.defaultsdeep": "4.6.1",
+    "node-loader": "^1.0.3",
     "pngjs": "3.3.3",
     "scratch-audio": "0.1.0-prerelease.20221123180128",
     "scratch-blocks": "0.1.0-prerelease.20230527085947",

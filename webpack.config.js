@@ -32,12 +32,15 @@ const base = {
             options: {
                 outputPath: 'media/music/'
             }
+        },
+        {
+            test: /\.node$/,
+            loader: 'node-loader',
+            include: path.resolve(__dirname, 'src')
+            // options: {
+            //     outputPath: 'module/loaded/'
+            // }
         }
-        // ,
-        // {
-        //     test: /\.node$/,
-        //     loader: 'node-loader'
-        // }
         // ,
         // {
         //     test: /\.node$/,
@@ -47,9 +50,9 @@ const base = {
         // }
         ]
     },
-    // node: {
-    //     __dirname: false
-    // },
+    node: {
+        __dirname: false
+    },
     // optimization: {
     //     minimizer: [
     //         new UglifyJsPlugin({
@@ -84,17 +87,17 @@ module.exports = [
     // Node-compatible
     defaultsDeep({}, base, {
         target: 'node',
-        // node: {
-        //     __dirname: false
-        // },
-        // module: {
-        //     rules: [
-        //         {
-        //             test: /\.node$/,
-        //             loader: 'node-loader'
-        //         }
-        //     ]
-        // },
+        node: {
+            __dirname: false
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.node$/,
+                    loader: 'node-loader'
+                }
+            ]
+        },
         entry: {
             'scratch-vm': './src/index.js'
         },
