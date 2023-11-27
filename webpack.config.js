@@ -36,10 +36,10 @@ const base = {
         {
             test: /\.node$/,
             loader: 'node-loader',
-            include: path.resolve(__dirname, 'src')
-            // options: {
-            //     outputPath: 'module/loaded/'
-            // }
+            // include: path.resolve(__dirname, 'src')
+            options: {
+                outputPath: 'static/'
+            }
         }
         // ,
         // {
@@ -50,9 +50,9 @@ const base = {
         // }
         ]
     },
-    node: {
-        __dirname: false
-    },
+    // node: {
+    //     __dirname: false
+    // },
     // optimization: {
     //     minimizer: [
     //         new UglifyJsPlugin({
@@ -60,7 +60,17 @@ const base = {
     //         })
     //     ]
     // },
-    plugins: []
+    plugins: [
+        new CopyWebpackPlugin([{
+           
+                
+            from: 'src/static',
+            to: 'static'
+                
+            
+        }])
+
+    ]
 };
 
 module.exports = [
@@ -87,17 +97,17 @@ module.exports = [
     // Node-compatible
     defaultsDeep({}, base, {
         target: 'node',
-        node: {
-            __dirname: false
-        },
-        module: {
-            rules: [
-                {
-                    test: /\.node$/,
-                    loader: 'node-loader'
-                }
-            ]
-        },
+        // node: {
+        //     __dirname: false
+        // },
+        // module: {
+        //     rules: [
+        //         {
+        //             test: /\.node$/,
+        //             loader: 'node-loader'
+        //         }
+        //     ]
+        // },
         entry: {
             'scratch-vm': './src/index.js'
         },
@@ -112,6 +122,7 @@ module.exports = [
             'immutable': true,
             'jszip': true,
             'minilog': true,
+            'nets': true,
             'scratch-parser': true,
             'socket.io-client': true,
             'text-encoding': true
