@@ -3,11 +3,11 @@ const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
 
-import {fileURLToPath} from 'url';
-import {dirname} from 'path';
+// import {fileURLToPath} from 'url';
+// import {dirname} from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
 
 // const fs = window.require('fs');
 
@@ -19,7 +19,8 @@ const path = require('path');
 
 // const gpio = require('../../static/gpiolib.node');
 // const gpio = require(process.resourcesPath + "/staatic/", 'gpiolib.node');
-const gpio = path.resolve(__dirname, '../../../static/gpiolib.node');
+// const gpio = path.resolve(__dirname, '../../../static/gpiolib.node');
+const gpio = require(path.resolve(__dirname, '../../../static/gpiolib.node'));
 // console.log("path: " + gpio);
 // options.icon = path.resolve(__dirname, "../../../icon.png");
 // const gpio = window.require('../../util/gpiolib.node');
@@ -62,8 +63,10 @@ class Scratch3PiGPIOBlocks {
      */
     getInfo () {
         return {
-            id: Scratch3PiGPIOBlocks.EXTENSION_ID,
-            name: Scratch3PiGPIOBlocks.EXTENSION_NAME,
+            // id: Scratch3PiGPIOBlocks.EXTENSION_ID,
+            id: 'pigpio',
+            // name: Scratch3PiGPIOBlocks.EXTENSION_NAME,
+            name: 'Raspberry Pi GPIO',
             blockIconURI: blockIconURI,
             blocks: [{
                 opcode: 'whenGpio',
@@ -172,21 +175,21 @@ class Scratch3PiGPIOBlocks {
                 pull: {
                     items: [{
                         text: formatMessage({
-                            id: 'pigpio.pull_high',
+                            id: 'pigpio.pullHigh',
                             default: 'pulled high',
                             description: 'pulled high'
                         }),
                         value: 'high'
                     }, {
                         text: formatMessage({
-                            id: 'pigpio.pull_low',
+                            id: 'pigpio.pullLow',
                             default: 'pulled low',
                             description: 'pulled low'
                         }),
                         value: 'low'
                     }, {
                         text: formatMessage({
-                            id: 'pigpio.pull_none',
+                            id: 'pigpio.pullNone',
                             default: 'not pulled',
                             description: 'not pulled'
                         }),
