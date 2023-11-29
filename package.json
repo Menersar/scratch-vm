@@ -65,7 +65,8 @@
     "scratch-translate-extension-languages": "0.0.20191118205314",
     "sidekick-json": "git+https://github.com/Menersar/sidekick-json.git",
     "text-encoding": "0.7.0",
-    "worker-loader": "^1.1.1"
+    "worker-loader": "^1.1.1",
+    "gpiolibModule": "file:./src-main/static/gpiolib"
   },
   "peerDependencies": {
     "scratch-svg-renderer": "^0.2.0-prerelease"
