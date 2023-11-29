@@ -35,14 +35,6 @@ const blockIconURI = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNv
  * @constructor
  */
 class Scratch3PiGPIOBlocks {
-    constructor (runtime) {
-        /**
-         * The runtime instantiating this block package.
-         * @type {Runtime}
-         */
-        this.runtime = runtime;
-    }
-
     /**
      * @return {string} - the name of this extension.
      */
@@ -55,6 +47,14 @@ class Scratch3PiGPIOBlocks {
     static get EXTENSION_ID () {
         return 'pigpio';
     }
+
+    constructor (runtime) {
+        /**
+         * The runtime instantiating this block package.
+         * @type {Runtime}
+         */
+        this.runtime = runtime;
+    }
     
     
     /**
@@ -66,9 +66,9 @@ class Scratch3PiGPIOBlocks {
             name: Scratch3PiGPIOBlocks.EXTENSION_NAME,
             blockIconURI: blockIconURI,
             blocks: [{
-                opcode: 'whenGpio',
+                opcode: 'when_gpio',
                 text: formatMessage({
-                    id: 'pigpio.whenGpio',
+                    id: 'pigpio.when_gpio',
                     default: 'when gpio [GPIO] is [HILO]',
                     description: 'when the gpio is in the specified state'
                 }),
@@ -86,9 +86,9 @@ class Scratch3PiGPIOBlocks {
                     }
                 }
             }, {
-                opcode: 'getGpio',
+                opcode: 'get_gpio',
                 text: formatMessage({
-                    id: 'pigpio.getGpio',
+                    id: 'pigpio.get_gpio',
                     default: 'gpio [GPIO] is [HILO] ?',
                     description: 'is the gpio in the specified state?'
                 }),
@@ -106,9 +106,9 @@ class Scratch3PiGPIOBlocks {
                     }
                 }
             }, {
-                opcode: 'setGpio',
+                opcode: 'set_gpio',
                 text: formatMessage({
-                    id: 'pigpio.setGpio',
+                    id: 'pigpio.set_gpio',
                     default: 'set gpio [GPIO] to output [HILO]',
                     description: 'set the gpio as output to the specified state'
                 }),
@@ -126,9 +126,9 @@ class Scratch3PiGPIOBlocks {
                     }
                 }
             }, {
-                opcode: 'setPull',
+                opcode: 'set_pull',
                 text: formatMessage({
-                    id: 'pigpio.setPull',
+                    id: 'pigpio.set_pull',
                     default: 'set gpio [GPIO] to input [PULL]',
                     description: 'set the gpio as input pulled up or down'
                 }),
