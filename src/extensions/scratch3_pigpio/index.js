@@ -3,15 +3,25 @@ const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
 
+import {fileURLToPath} from 'url';
+import {dirname} from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 // const fs = window.require('fs');
 
 // const cp = window.require('child_process');
-
-// const path = window.require('path');
-
+// cp;
+const path = require('path');
+// console.log("path: " + process.resourcesPath);
 // const gpio = window.require(path.join(process.resourcesPath + "/static", 'gpiolib.node'));
 
-const gpio = window.require('../../static/gpiolib.node');
+// const gpio = require('../../static/gpiolib.node');
+// const gpio = require(process.resourcesPath + "/staatic/", 'gpiolib.node');
+const gpio = path.resolve(__dirname, '../../../static/gpiolib.node');
+// console.log("path: " + gpio);
+// options.icon = path.resolve(__dirname, "../../../icon.png");
 // const gpio = window.require('../../util/gpiolib.node');
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
