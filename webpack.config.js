@@ -32,19 +32,19 @@ const base = {
             options: {
                 outputPath: 'media/music/'
             }
-        },
-        {
-            test: /\.node$/,
-            loader: 'node-loader',
-            // include: path.resolve(__dirname, 'src')
-            options: {
-                outputPath: 'static/'
-            }
         }
-        // ,
-        // {
-        //     test: /\.node$/,
-        //     loader: 'node-loader'
+            // {
+            //     test: /\.node$/,
+            //     loader: 'node-loader',
+            //     // include: path.resolve(__dirname, 'src')
+            //     options: {
+            //         outputPath: 'static/'
+            //     }
+            // }
+            // ,
+            // {
+            //     test: /\.node$/,
+            //     loader: 'node-loader'
             //     // config.module.rule('node').test(/\.node$/).use('node-loader').loader('node-loader').end()
 
         // }
