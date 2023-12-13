@@ -291,8 +291,10 @@ class Scratch3PiGPIOBlocks {
 
     setGpio (args) {
         let drive = 0;
+        const pin = Cast.toNumber(args.GPIO);
         if (Cast.toString(args.HILO) === 'high') drive = 1;
-        EditorPreload.gpioSet(Cast.toNumber(args.GPIO), drive);
+        // console.log('pin: ' + pin);
+        EditorPreload.gpioSet(pin, drive);
     } // Set pin as input, and set pull paramter
 
     setPull (args) {
