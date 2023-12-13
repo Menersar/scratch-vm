@@ -272,7 +272,7 @@ class Scratch3PiGPIOBlocks {
         const pin = Cast.toNumber(args.GPIO);
         const val = Cast.toString(args.HILO);
         // const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
-        const state = EditorPreload.getGpio(pin); // Get state of pin, leave pin as input/output, leave pull state
+        const state = EditorPreload.gpioGet(pin); // Get state of pin, leave pin as input/output, leave pull state
 
         let binary = 0;
         if (val === 'high') binary = 1;
