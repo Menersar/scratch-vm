@@ -3,32 +3,6 @@ const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
 
-// If not already defined...
-// const { remote } = require ('electron');
-// const path = require ('path');
-// let execPath;
-// execPath = path.dirname (remote.app.getPath ('exe'));
-// or
-// execPath = path.dirname (remote.process.execPath);
-
-// const path = require('path')
-// import { app } from 'electron'
-// let rootDir = app.getAppPath()
-// let last = path.basename(rootDir)
-// if (last == 'app.asar') {
-//     rootDir = Path.dirname(app.getPath('exe'))
-// }
-
-// const { ipcRenderer } = require('electron');
-// let gpio = ipcRenderer.send('get-module', 'gpiolib.node');
-// ipcRenderer.send('get-module', 'gpiolib.node');
-
-// let gpio = null;
-
-// ipcRenderer.on('return-module', (event, returnedModule) => {
-//   gpio = returnedModule;
-// });
-
 // import {fileURLToPath} from 'url';
 // import {dirname} from 'path';
 
@@ -36,10 +10,8 @@ const Cast = require('../../util/cast');
 // const __dirname = dirname(__filename);
 
 // const fs = window.require('fs');
-// const fs = require('fs');
 
 // const cp = window.require('child_process');
-// const cp = require('child_process');
 // cp;
 // const path = require('path');
 // console.log("path: " + process.resourcesPath);
@@ -50,47 +22,10 @@ const Cast = require('../../util/cast');
 // const gpio = path.resolve(__dirname, '../../../static/gpiolib.node');
 // const gpio = require(path.resolve(__dirname, '../../../static/gpiolib.node'));
 // const gpio = require(path.resolve(__dirname, '../../../static/gpiolib.node'));
-// const gpio = require('../../static/gpiolib.node');
-// import prcs from 'process';
-// const gpio = require(prcs.resourcesPath + "/static" + '/gpiolib.node');
-// console.log("root directory:", rootDir);
-// const gpio = require(rootDir + "/resources" + "/static" + '/gpiolib.node');
+const gpio = require('../../static/gpiolib.node');
 // console.log("path: " + gpio);
 // options.icon = path.resolve(__dirname, "../../../icon.png");
 // const gpio = window.require('../../util/gpiolib.node');
-
-// import path from 'path';
-// import { fileURLToPath } from 'url';
-
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-// const path = require('path');
-     
-//     import { fileURLToPath } from 'url'
-    
-//     const __filenameNew = fileURLToPath(import.meta.url)
-    
-//     const __dirnameNew = path.dirname(__filenameNew)
-
-// __dirname = path.resolve(path.dirname(''));
-// __dirname = path.resolve();
-// __dirname = process.cwd();
-// __dirname = fs.realpathSync('.');
-// __dirname = process.env.PWD
-
-// const cp = window.require('child_process');
-
-
-// __dirname = require("./static/gpiolib.node");
-
-
-// console.log("DIRRRRRRRRRRRRRRR: " + __dirname);
-
-// const gpio = require('./static/gpiolib.node');
-
-// const gpio = require("ModuleGpiolib");
-// const gpio = require("../../static/gpiolib.node");
-// const gpio = require(__dirname + "static/gpiolib.node");
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
@@ -271,8 +206,7 @@ class Scratch3PiGPIOBlocks {
     whenGpio (args) {
         const pin = Cast.toNumber(args.GPIO);
         const val = Cast.toString(args.HILO);
-        // const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
-        const state = EditorPreload.getGpio(pin); // Get state of pin, leave pin as input/output, leave pull state
+        const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
 
         let binary = 0;
         if (val === 'high') binary = 1;
@@ -282,8 +216,8 @@ class Scratch3PiGPIOBlocks {
     getGpio (args) {
         const pin = Cast.toNumber(args.GPIO);
         const val = Cast.toString(args.HILO);
-        // const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
-        const state = EditorPreload.gpioGet(pin);
+        const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
+
         let binary = 0;
         if (val === 'high') binary = 1;
         return state === binary;
@@ -292,7 +226,7 @@ class Scratch3PiGPIOBlocks {
     setGpio (args) {
         let drive = 0;
         if (Cast.toString(args.HILO) === 'high') drive = 1;
-        EditorPreload.gpioSet(Cast.toNumber(args.GPIO), drive);
+        gpio.set(Cast.toNumber(args.GPIO), drive);
     } // Set pin as input, and set pull paramter
 
     setPull (args) {
@@ -301,8 +235,7 @@ class Scratch3PiGPIOBlocks {
         let op = 2;
         if (val === 'low') op = 1;
         if (val === 'none') op = 0;
-        // gpio.pull(pin, op);
-        EditorPreload.gpioPull(pin, op);
+        gpio.pull(pin, op);
     }
 
 }
