@@ -1509,14 +1509,6 @@ class VirtualMachine extends EventEmitter {
     }
 
     /**
-     * Set the ws281x for the VM/runtime
-     * @param {!WS281X} ws281x The audio engine to attach
-     */
-    attachWS281X (ws281x) {
-        this.runtime.attachWS281X(ws281x);
-    }
-
-    /**
      * Set the renderer for the VM/runtime
      * @param {!RenderWebGL} renderer The renderer to attach
      */

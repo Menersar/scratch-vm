@@ -49,7 +49,6 @@ const Runtime = require('../engine/runtime');
 
 const ScratchRender = require('scratch-render');
 const AudioEngine = require('scratch-audio');
-const WS281X = require('node-rpi-ws281x-native');
 const ScratchSVGRenderer = require('scratch-svg-renderer');
 
 const Scratch = window.Scratch = window.Scratch || {};
@@ -651,8 +650,6 @@ const runBenchmark = function () {
     vm.attachRenderer(renderer);
     const audioEngine = new AudioEngine();
     vm.attachAudioEngine(audioEngine);
-    const ws281x = new WS281X();
-    vm.attachWS281X(ws281x);
     vm.attachV2BitmapAdapter(new ScratchSVGRenderer.BitmapAdapter());
 
     // Feed mouse events as VM I/O events.
