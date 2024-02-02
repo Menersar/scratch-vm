@@ -2,6 +2,9 @@ const EventEmitter = require('events');
 const {OrderedMap} = require('immutable');
 const ExtendedJSON = require('sidekick-json');
 
+
+// const ws281xNode = require('node-rpi-ws281x-native');
+
 const ArgumentType = require('../extension-support/argument-type');
 const Blocks = require('./blocks');
 const BlocksRuntimeCache = require('./blocks-runtime-cache');
@@ -1999,6 +2002,14 @@ class Runtime extends EventEmitter {
         }
     }
 
+    /**
+     * Attach the ws281x
+     * @param {!function} ws281x The audio engine to attach
+     */
+    attachWS281X (ws281x) {
+        this.ws281x = ws281x;
+    }
+    
     // !!! ???
     // -----------------------------------------------------------------------------
     // -----------------------------------------------------------------------------

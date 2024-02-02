@@ -162,6 +162,10 @@ module.exports = [
                     loader: 'expose-loader?AudioEngine'
                 },
                 {
+                    test: require.resolve('node-rpi-ws281x-native/index.js'),
+                    loader: 'expose-loader?WS281X'
+                },
+                {
                     test: require.resolve('scratch-storage/src/index.js'),
                     loader: 'expose-loader?ScratchStorage'
                 },
