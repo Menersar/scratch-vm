@@ -15,6 +15,7 @@ const base = {
     // Apparently, this is necessary to avoid the error "fs is not defined" when running "npm run build", idk why exactly and since when (and why) it is necessary. :\
     node: {
         fs: 'empty',
+        child_process: 'empty'
     },
     // node: {
     //     'fs': 'empty',
