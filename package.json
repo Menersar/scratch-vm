@@ -58,8 +58,6 @@
         "scratch-translate-extension-languages": "0.0.20191118205314",
         "sidekick-json": "git+https://github.com/Menersar/sidekick-json.git",
         "sidekick-nanolog": "git+https://github.com/Menersar/sidekick-nanolog.git#sidekick",
-        "sudo-js": "^1.0.2",
-        "sudo-prompt": "^9.2.1",
         "text-encoding": "0.7.0",
         "uuid": "8.3.2",
         "worker-loader": "^1.1.1"
