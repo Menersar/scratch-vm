@@ -4,6 +4,7 @@ const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
 const fs = window.require('fs');
 const cp = window.require('child_process');
+var nodeimu = require("nodeimu");
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
@@ -30,28 +31,13 @@ class Scratch3PiSenseHatBlocks {
     static get EXTENSION_ID () {
         return 'pisensehat';
     }
-
+    
     constructor (runtime) {
         /**
          * The runtime instantiating this block package.
          * @type {Runtime}
          */
         this.runtime = runtime;
-
-        // set up canvases for scaling graphics to display on the matrix
-        this.bigCanvas = document.createElement('canvas');
-        this.bigCanvas.width = 480 * 2;
-        this.bigCanvas.height = 360 * 2;
-        this.bigCtx = this.bigCanvas.getContext('2d');
-        this.bigCtx.imageSmoothingEnabled = true;
-        this.bigCtx.imageSmoothingQuality = 'high';
-
-        this.smallCanvas = document.createElement('canvas');
-        this.smallCanvas.width = 8;
-        this.smallCanvas.height = 8;
-        this.smallCtx = this.smallCanvas.getContext('2d');
-        this.smallCtx.imageSmoothingEnabled = true;
-        this.smallCtx.imageSmoothingQuality = 'high';
 
         // global colours
         this._fg = [255, 255, 255];
@@ -68,8 +54,6 @@ class Scratch3PiSenseHatBlocks {
         this._xtilt = 0;
         this._ytilt = 0;
 
-        this._imu = [0,0,0,0,0,0,0,0,0];
-
         // find the framebuffer on the SenseHAT
         this.fbfile = "";
         var fbtest = 0;
@@ -82,14 +66,8 @@ class Scratch3PiSenseHatBlocks {
                 if (data.indexOf ('RPi-Sense FB') != -1)
                 {
                     this.fbfile = "/dev/fb" + fbtest.toString ();
-
-                    const read = cp.spawn ("RTIMUCLI");
-
-                    read.stdout.on ('data', (readd) => {
-                        const str = String.fromCharCode.apply (null, readd);
-                        this._imu = str.split (":");
-                    });
-
+                    nodeimu  = require('nodeimu');
+                    this.IMU = new nodeimu.IMU();
                     break;
                 }
             }
@@ -103,6 +81,7 @@ class Scratch3PiSenseHatBlocks {
             fbtest++;
         }
     }
+
 
     /**
      * @returns {object} metadata for this extension and its blocks.
@@ -142,39 +121,6 @@ class Scratch3PiSenseHatBlocks {
                             defaultValue: 'A'
                         },
                     }
-                },
-                {
-                    opcode: 'display_symbol',
-                    text: formatMessage({
-                        id: 'pisensehat.display_symbol',
-                        default: 'display [MATRIX]',
-                        description: 'display a pattern on the LEDs'
-                    }),
-                    blockType: BlockType.COMMAND,
-                    arguments: {
-                        MATRIX: {
-                            type: ArgumentType.MATRIX8,
-                            defaultValue: '0110011001111110001111000011110001111110011111100011110000011000'
-                        }
-                    }
-                },
-                {
-                    opcode: 'display_sprite',
-                    text: formatMessage({
-                        id: 'pisensehat.display_sprite',
-                        default: 'display sprite',
-                        description: 'display the current sprite on the LED matrix'
-                    }),
-                    blockType: BlockType.COMMAND
-                },
-                {
-                    opcode: 'display_stage',
-                    text: formatMessage({
-                        id: 'pisensehat.display_stage',
-                        default: 'display stage',
-                        description: 'display the stage on the LED matrix'
-                    }),
-                    blockType: BlockType.COMMAND
                 },
                 {
                     opcode: 'all_off',
@@ -372,89 +318,9 @@ class Scratch3PiSenseHatBlocks {
                     acceptReporters: true,
                     items: ['0','1','2','3','4','5','6','7']
                 },
-                rots: {
-                    items: ['0', '90', '180', '270']
-                },
-                stick: {
-                    items: [
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.jup',
-                                default: 'up',
-                                description: 'joystick up'
-                            }),
-                            value: 'up arrow'
-                        },
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.jdown',
-                                default: 'down',
-                                description: 'joystick down'
-                            }),
-                            value: 'down arrow'
-                        },
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.jleft',
-                                default: 'left',
-                                description: 'joystick left'
-                            }),
-                            value: 'left arrow'
-                        },
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.jright',
-                                default: 'right',
-                                description: 'joystick right'
-                            }),
-                            value: 'right arrow'
-                        },
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.jcentre',
-                                default: 'centre',
-                                description: 'joystick centre'
-                            }),
-                            value: 'enter'
-                        }
-                    ]
-                },
-                tilt: {
-                    items: [
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.forward',
-                                default: 'forward',
-                                description: 'tilt forward'
-                            }),
-                            value: 'forward'
-                        },
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.backward',
-                                default: 'backward',
-                                description: 'tilt backward'
-                            }),
-                            value: 'backward'
-                        },
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.left',
-                                default: 'left',
-                                description: 'tilt left'
-                            }),
-                            value: 'left'
-                        },
-                        {
-                            text: formatMessage({
-                                id: 'pisensehat.right',
-                                default: 'right',
-                                description: 'tilt right'
-                            }),
-                            value: 'right'
-                        }
-                    ]
-                }
+                rots: ['0', '90', '180', '270'],
+                stick: [{text:'up', value:'up arrow'}, {text:'down', value:'down arrow'}, {text:'left', value:'left arrow'}, {text:'right', value:'right arrow'}, {text:'centre', value:'enter'}],
+                tilt: ['forward', 'backward', 'left', 'right']
             }
         };
     }
@@ -470,7 +336,9 @@ class Scratch3PiSenseHatBlocks {
             const view = new DataView (data.buffer, 0, 20);
             return Number((view.getInt16 (16, true) / 480) + 37).toFixed (2);
         }
-        else return Number (this._imu[4]);
+        const data = this.IMU.getValueSync();
+        if (data)
+            return Number (data.temperature).toFixed (2);
     };
 
     get_press ()
@@ -484,7 +352,9 @@ class Scratch3PiSenseHatBlocks {
             const view = new DataView (data.buffer, 0, 20);
             return Number (view.getInt32 (12, true) / 4096).toFixed (2);
         }
-        else return Number (this._imu[3]);
+        const data = this.IMU.getValueSync();
+        if (data)
+            return Number (data.pressure).toFixed (2);
     };
 
     get_humid ()
@@ -498,7 +368,9 @@ class Scratch3PiSenseHatBlocks {
             const view = new DataView (data.buffer, 0, 28);
             return Number (view.getInt16 (22, true) / 256).toFixed (2);
         }
-        else return Number (this._imu[5]);
+        const data = this.IMU.getValueSync();
+        if (data)
+            return Number (data.humidity).toFixed (2);
     };
 
     get_ox ()
@@ -512,7 +384,9 @@ class Scratch3PiSenseHatBlocks {
             const view = new DataView (data.buffer, 0, 56);
             return Number (view.getInt16 (50, true) >= 0 ? view.getInt16 (50, true) * 360 / 32768 : 360 + (view.getInt16 (50, true) * 360 / 32768)).toFixed (2);
         }
-        else return Number (this._imu[0]);
+        const data = this.IMU.getValueSync();
+        if (data)
+            return Number (data.fusionPose.x >= 0 ? data.fusionPose.x * 180 / Math.PI : 360 + data.fusionPose.x * 180 / Math.PI).toFixed (2);
     };
 
     get_oy ()
@@ -526,7 +400,9 @@ class Scratch3PiSenseHatBlocks {
             const view = new DataView (data.buffer, 0, 56);
             return Number (view.getInt16 (52, true) >= 0 ? view.getInt16 (52, true) * 360 / 32768 : 360 + (view.getInt16 (52, true) * 360 / 32768)).toFixed (2);
         }
-        else return Number (this._imu[1]);
+        const data = this.IMU.getValueSync();
+        if (data)
+            return Number (data.fusionPose.y >= 0 ? data.fusionPose.y * 180 / Math.PI : 360 + data.fusionPose.y * 180 / Math.PI).toFixed (2);
     };
 
     get_oz ()
@@ -540,22 +416,27 @@ class Scratch3PiSenseHatBlocks {
             const view = new DataView (data.buffer, 0, 56);
             return Number (view.getInt16 (54, true) >= 0 ? view.getInt16 (54, true) * 360 / 32768 : 360 + (view.getInt16 (54, true) * 360 / 32768)).toFixed (2);
         }
-        else return Number (this._imu[2]);
+        const data = this.IMU.getValueSync();
+        if (data)
+            return Number (data.fusionPose.z >= 0 ? data.fusionPose.z * 180 / Math.PI : 360 + data.fusionPose.z * 180 / Math.PI).toFixed (2);
     };
 
-    _pixel_remap (pos)
+    _pixel_remap (x, y, val)
     {
-        const x = pos % 8;
-        const y = (pos - x) / 8;
-
+        let pix = new Uint8Array (2);
+        pix[0] = val / 256;
+        pix[1] = val % 256;
         if (this._orient == 90)
-            return (x * 8 + (7 - y));
+            pos = x * 8 + (7 - y);
         else if (this._orient == 180)
-            return (63 - (y * 8 + x));
+            pos = 63 - (y * 8 + x);
         else if (this._orient == 270)
-            return ((7 - x) * 8 + y);
+            pos = (7 - x) * 8 + y;
         else
-            return pos;
+            pos = y * 8 + x;
+        const fd = fs.openSync (this.fbfile, "r+");
+        fs.writeSync (fd, pix, 0, 2, pos * 2);
+        fs.closeSync (fd);
     }
 
     set_pixel (args)
@@ -563,113 +444,10 @@ class Scratch3PiSenseHatBlocks {
         const x = Cast.toNumber (args.X);
         const y = Cast.toNumber (args.Y);
 
-        if (x >= 0 && x <= 7 && y >= 0 && y <= 7)
-        {
-            const colour = Cast.toRgbColorList (args.COLOUR);
-            const val = (Math.trunc (colour[2] / 32) * 1024) + (Math.trunc (colour[0] / 32) * 32) + Math.trunc (colour[1] / 32);
+        const colour = Cast.toRgbColorList (args.COLOUR);
+        const val = (Math.trunc (colour[2] / 32) * 1024) + (Math.trunc (colour[0] / 32) * 32) + Math.trunc (colour[1] / 32);
 
-            let pix = new Uint8Array (2);
-            pix[0] = val / 256;
-            pix[1] = val % 256;
-
-            const pos = this._pixel_remap ((y * 8) + x);
-
-            const fd = fs.openSync (this.fbfile, "r+");
-            fs.writeSync (fd, pix, 0, 2, pos * 2);
-            fs.closeSync (fd);
-        }
-    }
-
-    display_symbol (args)
-    {
-        const symbol = Cast.toString(args.MATRIX).replace(/\s/g, '');
-        const valf = (Math.trunc (this._fg[2] / 32) * 1024) + (Math.trunc (this._fg[0] / 32) * 32) + Math.trunc (this._fg[1] / 32);
-        const valb = (Math.trunc (this._bg[2] / 32) * 1024) + (Math.trunc (this._bg[0] / 32) * 32) + Math.trunc (this._bg[1] / 32);
-
-        let pix = new Uint8Array (128);
-        for (count = 0; count < 64; count++)
-        {
-            if (symbol.charAt (count) == '1') val = valf;
-            else val = valb;
-
-            const pos = this._pixel_remap (count);
-            pix[pos * 2] = val / 256;
-            pix[pos * 2 + 1] = val % 256;
-        }
-
-        const fd = fs.openSync (this.fbfile, "r+");
-        fs.writeSync (fd, pix, 0, 128, 0);
-        fs.closeSync (fd);
-    }
-
-    display_stage ()
-    {
-      this.runtime.renderer.draw();
-      const gl = this.runtime.renderer._gl;
-
-      const xOffset = (gl.canvas.width - gl.canvas.height) / 2;
-      this.smallCtx.drawImage(gl.canvas, xOffset, 0, gl.canvas.height, gl.canvas.height, 0, 0, 8, 8);
-      const matrixImageData = this.smallCtx.getImageData(0, 0, 8, 8);
-
-      this._displayImageData(matrixImageData);
-
-      this.smallCtx.clearRect(0, 0, this.smallCanvas.width, this.smallCanvas.height);
-
-      // Yield for a frame
-      return Promise.resolve();
-    }
-
-    display_sprite (args, util) {
-      const drawable = this.runtime.renderer.extractDrawable(util.target.drawableID, util.target.x, util.target.y);
-      if ((drawable.width < 1) || (drawable.height < 1)) return;
-
-      // fit the sprite in a square
-      let xOffset = 0;
-      let yOffset = 0;
-      let squareSize = 0;
-      if (drawable.width > drawable.height) {
-          squareSize = drawable.width;
-          yOffset = (drawable.width - drawable.height) / 2;
-      } else {
-          squareSize = drawable.height;
-          xOffset = (drawable.height - drawable.width) / 2;
-      }
-
-      const imageData = this.bigCtx.createImageData(drawable.width, drawable.height);
-      imageData.data.set(drawable.data);
-      this.bigCtx.putImageData(imageData, xOffset, yOffset);
-      this.smallCtx.drawImage(this.bigCanvas,
-          0, 0, squareSize, squareSize,
-          0, 0, 8, 8);
-      const matrixImageData = this.smallCtx.getImageData(0, 0, 8, 8);
-
-      this._displayImageData(matrixImageData);
-
-      this.smallCtx.clearRect(0, 0, this.smallCanvas.width, this.smallCanvas.height);
-      this.bigCtx.clearRect(0, 0, this.bigCanvas.width, this.bigCanvas.height);
-
-      // Yield for a frame
-      return Promise.resolve();
-    }
-
-    _displayImageData (imageData) {
-      let pix = new Uint8Array (128);
-      for (let count = 0; count < 64; count++)
-      {
-        const r = imageData.data[count * 4];
-        const g = imageData.data[(count * 4) + 1];
-        const b = imageData.data[(count * 4) + 2];
-
-        const val = (Math.trunc (b / 32) * 1024) + (Math.trunc (r / 32) * 32) + Math.trunc (g / 32);
-
-        const pos = this._pixel_remap (count);
-        pix[pos * 2] = val / 256;
-        pix[pos * 2 + 1] = val % 256;
-      }
-
-      const fd = fs.openSync (this.fbfile, "r+");
-      fs.writeSync (fd, pix, 0, 128, 0);
-      fs.closeSync (fd);
+        if (x >= 0 && x <= 7 && y >= 0 && y <= 7) this._pixel_remap (x, y, val);
     }
 
     _all_pixels (val)
@@ -752,7 +530,6 @@ class Scratch3PiSenseHatBlocks {
         let lgr = new Uint8Array (80);
         let inv = 90 - dict.indexOf (lett);
         if (inv > 90) inv = 90;
-        // !!! 
         const fd = fs.openSync ('/usr/lib/scratch3/sense_hat_text.bmp', 'r');
         for (count = 0; count < 5; count++)
             fs.readSync (fd, lgr, count * 16, 16, 3098 + inv * 80 + (64 - count * 16));
@@ -979,14 +756,18 @@ class Scratch3PiSenseHatBlocks {
         }
         else
         {
-            x = Number (this._imu[6]);
-            y = Number (this._imu[7]);
-            z = Number (this._imu[8]);
+            const data = this.IMU.getValueSync ();
+            if (data)
+            {
+                x = Number (data.accel.x);
+                y = Number (data.accel.y);
+                z = Number (data.accel.z);
+            }
+            else return false;
         }
 
-        const targ = 1.6 * 1.6;
-        const mag = x * x + y * y + z * z;
-        if (mag > targ)
+        const targ = 1.6;
+        if (x > targ || x < (-1 * targ) || y > targ || y < (-1 * targ) || z > targ || z < (-1 * targ))
         {
             if (this._movtim != 0) clearTimeout (this._movtim);
             this._movtim = setTimeout (this._unlock_move, 500, this);
@@ -1017,10 +798,13 @@ class Scratch3PiSenseHatBlocks {
         }
         else
         {
-            x = Number (this._imu[0]);
-            y = Number (this._imu[1]);
-            if (x > 180.0) x -= 360.0;
-            if (y > 180.0) y -= 360.0;
+            const data = this.IMU.getValueSync();
+            if (data)
+            {
+                x = Number (data.fusionPose.x * 180 / Math.PI);
+                y = Number (data.fusionPose.y * 180 / Math.PI);
+            }
+            else return false;
         }
 
         let dir = 0;

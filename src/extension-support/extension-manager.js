@@ -28,12 +28,16 @@ const defaultBuiltinExtensions = {
     makeymakey: () => require('../extensions/scratch3_makeymakey'),
     boost: () => require('../extensions/scratch3_boost'),
     gdxfor: () => require('../extensions/scratch3_gdx_for'),
-    pigpio: () => require('../extensions/scratch3_pigpio'),
+    // pigpio: () => require('../extensions/scratch3_pigpio'),
     
     // This is the core extension:
-    sidekick: () => require('../extensions/sidekick')
+    sidekick: () => require('../extensions/sidekick'),
 
     // ,
+
+    pigpio: () => require('../extensions/scratch3_pigpio'),
+    pisensehat: () => require('../extensions/scratch3_pisensehat'),
+    pivsgpio: () => require('../extensions/scratch3_pivsgpio'),
 
 
     // pigpio: () => require('../extensions/scratch3_pigpio')
