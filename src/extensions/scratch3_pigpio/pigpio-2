@@ -1,0 +1,12 @@
+pigpio = {
+  name: 'Raspberry Pi GPIO',
+  extensionId: 'pigpio',
+  collaborator: 'Raspberry Pi',
+  iconURL: _pigpio_pigpio_png__WEBPACK_IMPORTED_MODULE_14___default.a,
+  insetIconURL: _pigpio_pigpio_small_svg__WEBPACK_IMPORTED_MODULE_15___default.a,
+  description: /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], {
+    defaultMessage: "Control Raspberry Pi GPIO lines",
+    id: "gui.extension.pigpio.description"
+  }),
+  featured: true
+}
