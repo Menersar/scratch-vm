@@ -1,14 +1,11 @@
-// const formatMessage = require('./node_modules/format-message/index.js');
-// const ArgumentType = require('./node_modules/scratch-vm/src/extension-support/argument-type.js');
-// const BlockType = require('./node_modules/scratch-vm/src/extension-support/block-type.js');
-// const Cast = require('./node_modules/scratch-vm/src/util/cast.js');
-
 const formatMessage = require('format-message');
 const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const Cast = require('../../util/cast');
-// const path = window.require('path');
-// const gpio = window.require(path.join(process.resourcesPath + '/static', 'gpiolib.node'));
+const fs = window.require('fs');
+const cp = window.require('child_process');
+const path = window.require('path');
+const gpio = window.require(path.join(__static, 'gpiolib.node'));
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
@@ -23,162 +20,175 @@ const blockIconURI = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNv
  */
 class Scratch3PiGPIOBlocks {
     /**
-   * @return {string} - the name of this extension.
-   */
+     * @return {string} - the name of this extension.
+     */
     static get EXTENSION_NAME () {
         return 'Raspberry Pi GPIO';
     }
 
     /**
-   * @return {string} - the ID of this extension.
-   */
+     * @return {string} - the ID of this extension.
+     */
     static get EXTENSION_ID () {
         return 'pigpio';
     }
+    
     constructor (runtime) {
-    /**
-     * The runtime instantiating this block package.
-     * @type {Runtime}
-     */
+        /**
+         * The runtime instantiating this block package.
+         * @type {Runtime}
+         */
         this.runtime = runtime;
     }
 
+
     /**
-   * @returns {object} metadata for this extension and its blocks.
-   */
+     * @returns {object} metadata for this extension and its blocks.
+     */
     getInfo () {
         return {
             id: Scratch3PiGPIOBlocks.EXTENSION_ID,
             name: Scratch3PiGPIOBlocks.EXTENSION_NAME,
             blockIconURI: blockIconURI,
-            blocks: [{
-                opcode: 'when_gpio',
-                text: formatMessage({
-                    id: 'pigpio.when_gpio',
-                    default: 'when gpio [GPIO] is [HILO]',
-                    description: 'when the gpio is in the specified state'
-                }),
-                blockType: BlockType.HAT,
-                arguments: {
-                    GPIO: {
-                        type: ArgumentType.STRING,
-                        menu: 'gpios',
-                        defaultValue: '0'
-                    },
-                    HILO: {
-                        type: ArgumentType.STRING,
-                        menu: 'hilo',
-                        defaultValue: 'high'
+            blocks: [
+                {
+                    opcode: 'when_gpio',
+                    text: formatMessage({
+                        id: 'pigpio.when_gpio',
+                        default: 'when gpio [GPIO] is [HILO]',
+                        description: 'when the gpio is in the specified state'
+                    }),
+                    blockType: BlockType.HAT,
+                    arguments: {
+                        GPIO: {
+                            type: ArgumentType.STRING,
+                            menu: 'gpios',
+                            defaultValue: '0'
+                        },
+                        HILO: {
+                            type: ArgumentType.STRING,
+                            menu: 'hilo',
+                            defaultValue: 'high'
+                        }
+                    }
+                },
+                {
+                    opcode: 'get_gpio',
+                    text: formatMessage({
+                        id: 'pigpio.get_gpio',
+                        default: 'gpio [GPIO] is [HILO] ?',
+                        description: 'is the gpio in the specified state?'
+                    }),
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        GPIO: {
+                            type: ArgumentType.STRING,
+                            menu: 'gpios',
+                            defaultValue: '0'
+                        },
+                        HILO: {
+                            type: ArgumentType.STRING,
+                            menu: 'hilo',
+                            defaultValue: 'high'
+                        }
+                    }
+                },
+                {
+                    opcode: 'set_gpio',
+                    text: formatMessage({
+                        id: 'pigpio.set_gpio',
+                        default: 'set gpio [GPIO] to output [HILO]',
+                        description: 'set the gpio as output to the specified state'
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        GPIO: {
+                            type: ArgumentType.STRING,
+                            menu: 'gpios',
+                            defaultValue: '0'
+                        },
+                        HILO: {
+                            type: ArgumentType.STRING,
+                            menu: 'hilo',
+                            defaultValue: 'high'
+                        }
+                    }
+                },
+                {
+                    opcode: 'set_pull',
+                    text: formatMessage({
+                        id: 'pigpio.set_pull',
+                        default: 'set gpio [GPIO] to input [PULL]',
+                        description: 'set the gpio as input pulled up or down'
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        GPIO: {
+                            type: ArgumentType.STRING,
+                            menu: 'gpios',
+                            defaultValue: '0'
+                        },
+                        PULL: {
+                            type: ArgumentType.STRING,
+                            menu: 'pull',
+                            defaultValue: 'high'
+                        }
                     }
                 }
-            }, {
-                opcode: 'get_gpio',
-                text: formatMessage({
-                    id: 'pigpio.get_gpio',
-                    default: 'gpio [GPIO] is [HILO] ?',
-                    description: 'is the gpio in the specified state?'
-                }),
-                blockType: BlockType.BOOLEAN,
-                arguments: {
-                    GPIO: {
-                        type: ArgumentType.STRING,
-                        menu: 'gpios',
-                        defaultValue: '0'
-                    },
-                    HILO: {
-                        type: ArgumentType.STRING,
-                        menu: 'hilo',
-                        defaultValue: 'high'
-                    }
-                }
-            }, {
-                opcode: 'set_gpio',
-                text: formatMessage({
-                    id: 'pigpio.set_gpio',
-                    default: 'set gpio [GPIO] to output [HILO]',
-                    description: 'set the gpio as output to the specified state'
-                }),
-                blockType: BlockType.COMMAND,
-                arguments: {
-                    GPIO: {
-                        type: ArgumentType.STRING,
-                        menu: 'gpios',
-                        defaultValue: '0'
-                    },
-                    HILO: {
-                        type: ArgumentType.STRING,
-                        menu: 'hilo',
-                        defaultValue: 'high'
-                    }
-                }
-            }, {
-                opcode: 'set_pull',
-                text: formatMessage({
-                    id: 'pigpio.set_pull',
-                    default: 'set gpio [GPIO] to input [PULL]',
-                    description: 'set the gpio as input pulled up or down'
-                }),
-                blockType: BlockType.COMMAND,
-                arguments: {
-                    GPIO: {
-                        type: ArgumentType.STRING,
-                        menu: 'gpios',
-                        defaultValue: '0'
-                    },
-                    PULL: {
-                        type: ArgumentType.STRING,
-                        menu: 'pull',
-                        defaultValue: 'high'
-                    }
-                }
-            }],
+            ],
             menus: {
                 gpios: {
                     acceptReporters: true,
-                    items: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                        '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
-                        '20', '21', '22', '23', '24', '25', '26', '27']
+                    // eslint-disable-next-line max-len
+                    items: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27']
                 },
                 hilo: {
-                    items: [{
-                        text: formatMessage({
-                            id: 'pigpio.high',
-                            default: 'high',
-                            description: 'logic state high'
-                        }),
-                        value: 'high'
-                    }, {
-                        text: formatMessage({
-                            id: 'pigpio.low',
-                            default: 'low',
-                            description: 'logic state low'
-                        }),
-                        value: 'low'
-                    }]
+                    items: [
+                        {
+                            text: formatMessage({
+                                id: 'pigpio.high',
+                                default: 'high',
+                                description: 'logic state high'
+                            }),
+                            value: 'high'
+                        },
+                        {
+                            text: formatMessage({
+                                id: 'pigpio.low',
+                                default: 'low',
+                                description: 'logic state low'
+                            }),
+                            value: 'low'
+                        }
+                    ]
                 },
                 pull: {
-                    items: [{
-                        text: formatMessage({
-                            id: 'pigpio.pull_high',
-                            default: 'pulled high',
-                            description: 'pulled high'
-                        }),
-                        value: 'high'
-                    }, {
-                        text: formatMessage({
-                            id: 'pigpio.pull_low',
-                            default: 'pulled low',
-                            description: 'pulled low'
-                        }),
-                        value: 'low'
-                    }, {
-                        text: formatMessage({
-                            id: 'pigpio.pull_none',
-                            default: 'not pulled',
-                            description: 'not pulled'
-                        }),
-                        value: 'none'
-                    }]
+                    items: [
+                        {
+                            text: formatMessage({
+                                id: 'pigpio.pull_high',
+                                default: 'pulled high',
+                                description: 'pulled high'
+                            }),
+                            value: 'high'
+                        },
+                        {
+                            text: formatMessage({
+                                id: 'pigpio.pull_low',
+                                default: 'pulled low',
+                                description: 'pulled low'
+                            }),
+                            value: 'low'
+                        },
+                        {
+                            text: formatMessage({
+                                id: 'pigpio.pull_none',
+                                default: 'not pulled',
+                                description: 'not pulled'
+                            }),
+                            value: 'none'
+                        }
+                    ]
                 }
             }
         };
@@ -188,10 +198,13 @@ class Scratch3PiGPIOBlocks {
     when_gpio (args) {
         const pin = Cast.toNumber(args.GPIO);
         const val = Cast.toString(args.HILO);
-        // const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
-        const state = EditorPreload.gpioGet(pin, -1, -1);
+        const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
+
         let binary = 0;
-        if (val === 'high') binary = 1;
+        if (val === 'high') {
+            binary = 1;
+        }
+
         return state === binary;
     }
 
@@ -199,32 +212,38 @@ class Scratch3PiGPIOBlocks {
     get_gpio (args) {
         const pin = Cast.toNumber(args.GPIO);
         const val = Cast.toString(args.HILO);
-        // const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
-        // Get state of pin, leave pin as input/output, leave pull state
-        const state = EditorPreload.gpioGet(pin, -1, -1);
+        const state = gpio.get(pin, -1, -1); // Get state of pin, leave pin as input/output, leave pull state
+    
         let binary = 0;
-        if (val === 'high') binary = 1;
+        if (val === 'high') {
+            binary = 1;
+        }
+
         return state === binary;
     }
 
     // Set pin as output and set drive
     set_gpio (args) {
         let drive = 0;
-        if (Cast.toString(args.HILO) === 'high') drive = 1;
-        // gpio.set(Cast.toNumber(args.GPIO), drive);
-        EditorPreload.gpioSet(Cast.toNumber(args.GPIO), drive);
+        if (Cast.toString(args.HILO) === 'high') {
+            drive = 1;
+        }
+
+        gpio.set(Cast.toNumber(args.GPIO), drive);
     }
 
     // Set pin as input, and set pull paramter
     set_pull (args) {
         const pin = Cast.toNumber(args.GPIO);
         const val = Cast.toString(args.PULL);
+
         let op = 2;
         if (val === 'low') op = 1;
         if (val === 'none') op = 0;
-        // gpio.pull(pin, op);
-        EditorPreload.gpioPull(pin, op);
 
+        gpio.pull(pin, op);
     }
+
 }
+
 module.exports = Scratch3PiGPIOBlocks;
